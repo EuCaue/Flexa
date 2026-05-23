@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="Adw" version="1.0"/>
+  <template class="FlexaWindow" parent="AdwApplicationWindow">
+    <property name="title" translatable="yes">Flexa</property>
+    <property name="default-width">600</property>
+    <property name="default-height">650</property>
+    <property name="content">
+      <object class="AdwToastOverlay" id="toast_overlay">
+        <property name="child">
+          <object class="AdwToolbarView">
+
+            <child type="top">
+              <object class="AdwHeaderBar">
+
+                <child type="start">
+                  <object class="GtkButton" id="btn_add">
+                    <property name="icon-name">folder-new-symbolic</property>
+                    <property name="tooltip-text" translatable="yes">Add cursor folder</property>
+                    <property name="cursor">
+                      <object class="GdkCursor">
+                        <property name="name">pointer</property>
+                      </object>
+                    </property>
+                    </object>
+                </child>
+
+                <child type="end">
+                  <object class="GtkButton" id="btn_convert">
+                    <property name="label" translatable="yes">Convert</property>
+                    <property name="sensitive">False</property>
+                    <property name="cursor">
+                      <object class="GdkCursor">
+                        <property name="name">pointer</property>
+                      </object>
+                    </property>
+                    <style>
+                      <class name="suggested-action"/>
+                    </style>
+                  </object>
+                </child>
+
+                <child type="end">
+                  <object class="GtkMenuButton">
+                    <property name="primary">True</property>
+                    <property name="icon-name">open-menu-symbolic</property>
+                    <property name="tooltip-text" translatable="yes">Main Menu</property>
+                    <property name="menu-model">primary_menu</property>
+                  </object>
+                </child>
+
+              </object>
+            </child>
+
+            <property name="content">
+              <object class="GtkScrolledWindow">
+                <property name="vexpand">True</property>
+                <property name="hexpand">True</property>
+                <child>
+                  <object class="GtkListBox" id="cursor_list">
+                    <property name="selection-mode">none</property>
+                    <property name="margin-top">24</property>
+                    <property name="margin-bottom">24</property>
+                    <property name="margin-start">12</property>
+                    <property name="margin-end">12</property>
+                    <style>
+                      <class name="boxed-list"/>
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </property>
+
+          </object>
+        </property>
+      </object>
+    </property>
+  </template>
+
+  <menu id="primary_menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">_Preferences</attribute>
+        <attribute name="action">app.preferences</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
+        <attribute name="action">app.shortcuts</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">_About Flexa</attribute>
+        <attribute name="action">app.about</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>

@@ -1,0 +1,29 @@
+# Meson / Flatpak build output
+/_build/
+/build/
+/.flatpak-builder/
+/.flatpak/
+/meson-logs/
+/meson-private/
+
+# Python cache and virtualenvs
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+*.egg-info/
+/.venv/
+/venv/
+/.pytest_cache/
+/.mypy_cache/
+/.ruff_cache/
+/.pyright/
+
+# Editor and local workspace files
+/.vscode/
+/.idea/
+
+# Temporary and backup files
+*~
+*.swp
+.DS_Store

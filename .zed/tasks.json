@@ -1,0 +1,44 @@
+[
+  {
+    "label": "Build",
+    "command": "flatpak-builder --user --force-clean _build io.github.eucaue.flexa.json",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Build & Install",
+    "command": "flatpak-builder --user --install --force-clean _build io.github.eucaue.flexa.json",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Run",
+    "command": "flatpak run io.github.eucaue.flexa",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Build & Run",
+    "command": "flatpak-builder --user --install --force-clean _build io.github.eucaue.flexa.json && flatpak run io.github.eucaue.flexa",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Run (sem reinstalar)",
+    "command": "flatpak-builder --run _build io.github.eucaue.flexa.json flexa",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Logs",
+    "command": "journalctl --user -f -t flexa",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  }
+]

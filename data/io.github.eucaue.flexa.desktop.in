@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Flexa
+Exec=flexa
+Icon=io.github.eucaue.flexa
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=GTK;
+StartupNotify=true
+DBusActivatable=true

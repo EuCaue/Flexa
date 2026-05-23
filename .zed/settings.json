@@ -1,0 +1,30 @@
+{
+  "languages": {
+    "Python": {
+      "language_servers": [
+        "pyright",
+        "ruff"
+      ],
+      "format_on_save": "on",
+      "formatter": {
+        "language_server": {
+          "name": "ruff"
+        }
+      }
+    }
+  },
+  "lsp": {
+    "pyright": {
+      "settings": {
+        "python": {
+          "pythonPath": "/home/caue/code/flexa/.venv/bin/python3",
+          "venvPath": "/home/caue/code/flexa",
+          "venv": ".venv"
+        },
+        "pyright": {
+          "reportMissingModuleSource": "none"
+        }
+      }
+    }
+  }
+}
