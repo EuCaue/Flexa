@@ -57,6 +57,58 @@ class FlexaApplication(Adw.Application):
     def connect_signals(self):
         self.window.btn_add.connect("clicked", self.on_add_folders)
         self.window.btn_convert.connect("clicked", self.on_convert_files)
+        self.setup_drop_target()
+
+    def setup_drop_target(self):
+        drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
+        drop_target.connect("drop", self.on_drop_folders)
+        drop_target.connect("enter", self.on_drop_enter)
+        drop_target.connect("leave", self.on_drop_leave)
+        self.window.cursor_list.add_controller(drop_target)
+
+    def on_drop_folders(
+        self, target: Gtk.DropTarget, value: Gdk.FileList, x: int, y: int
+    ):
+        files = value.get_files()  # files dragged
+        added = 0
+
+        for gfile in files:
+            try:
+                info = gfile.query_info(
+                    "standard::type,standard::display-name",
+                    Gio.FileQueryInfoFlags.NONE,
+                    None,
+                )
+                # accept only directories
+                if info.get_file_type() != Gio.FileType.DIRECTORY:
+                    continue
+
+                folder_path = gfile.get_path()
+                folder_name = info.get_display_name()
+
+                # avoid duplicates
+                if any(f["folder_path"] == folder_path for f in self.files):
+                    continue
+
+                row = self.on_create_folder_row(folder_name, folder_path)
+                self.window.cursor_list.append(row)
+                added += 1
+
+            except Exception as e:
+                print(f"Error while processing file: {e}")
+
+        if added > 0:
+            self.window.btn_convert.set_sensitive(True)
+
+        self.on_drop_leave(target)
+        return added > 0  # reject visually if no folders were added
+
+    def on_drop_enter(self, target, x, y):
+        self.window.cursor_list.add_css_class("drop-target")
+        return Gdk.DragAction.COPY
+
+    def on_drop_leave(self, target):
+        self.window.cursor_list.remove_css_class("drop-target")
 
     def on_convert_files(self, _):
         print(f"converting files: {self.files}")
