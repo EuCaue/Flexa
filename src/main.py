@@ -63,7 +63,17 @@ class FlexaApplication(Adw.Application):
         self.window.btn_add.connect("clicked", self.on_add_folders)
         self.window.btn_convert.connect("clicked", self.on_convert_files)
         self.setup_drop_target()
+        self.setup_empty_state()
+
+    def setup_empty_state(self):
         self.window.cursor_list.set_placeholder(self.empty_state)
+        click = Gtk.GestureClick()
+        click.connect("pressed", self.on_list_clicked)
+        self.empty_state.add_controller(click)
+
+    def on_list_clicked(self, gesture: Gtk.GestureClick, x: float, y: float, _):
+        if len(self.files) == 0:
+            self.on_add_folders(None)
 
     def setup_drop_target(self):
         drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
@@ -181,6 +191,7 @@ class FlexaApplication(Adw.Application):
         print(f"removing folder: {row_name}")
         self.window.cursor_list.remove(row)
         self.files.remove({"row_name": row_name, "folder_path": folder_path})
+        self.window.btn_convert.set_sensitive(len(self.files) > 0)
         return True
 
     def on_create_folder_row(self, row_name: str, row_folder_path: str):
