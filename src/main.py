@@ -52,12 +52,18 @@ class FlexaApplication(Adw.Application):
         self.create_action("shortcuts", self.on_shortcuts_action)
         self.files: list[RowData] = []
         self.filesDialog: Gtk.FileDialog = Gtk.FileDialog()
+        self.empty_state: Adw.StatusPage = Adw.StatusPage(
+            title="No Folders Added",
+            description="Drag folders here or click the button below",
+            icon_name="folder-symbolic",
+        )
         self.window = None
 
     def connect_signals(self):
         self.window.btn_add.connect("clicked", self.on_add_folders)
         self.window.btn_convert.connect("clicked", self.on_convert_files)
         self.setup_drop_target()
+        self.window.cursor_list.set_placeholder(self.empty_state)
 
     def setup_drop_target(self):
         drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
@@ -175,8 +181,6 @@ class FlexaApplication(Adw.Application):
         print(f"removing folder: {row_name}")
         self.window.cursor_list.remove(row)
         self.files.remove({"row_name": row_name, "folder_path": folder_path})
-        if len(self.files) == 0:
-            self.window.btn_convert.set_sensitive(False)
         return True
 
     def on_create_folder_row(self, row_name: str, row_folder_path: str):

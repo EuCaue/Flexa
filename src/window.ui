@@ -13,7 +13,6 @@
 
             <child type="top">
               <object class="AdwHeaderBar">
-
                 <child type="start">
                   <object class="GtkButton" id="btn_add">
                     <property name="icon-name">folder-new-symbolic</property>
@@ -23,24 +22,8 @@
                         <property name="name">pointer</property>
                       </object>
                     </property>
-                    </object>
-                </child>
-
-                <child type="end">
-                  <object class="GtkButton" id="btn_convert">
-                    <property name="label" translatable="yes">Convert</property>
-                    <property name="sensitive">False</property>
-                    <property name="cursor">
-                      <object class="GdkCursor">
-                        <property name="name">pointer</property>
-                      </object>
-                    </property>
-                    <style>
-                      <class name="suggested-action"/>
-                    </style>
                   </object>
                 </child>
-
                 <child type="end">
                   <object class="GtkMenuButton">
                     <property name="primary">True</property>
@@ -49,7 +32,6 @@
                     <property name="menu-model">primary_menu</property>
                   </object>
                 </child>
-
               </object>
             </child>
 
@@ -71,6 +53,33 @@
                 </child>
               </object>
             </property>
+
+            <child type="bottom">
+              <object class="GtkActionBar">
+                <property name="revealed">True</property>
+                <child type="center">
+                  <object class="GtkBox">
+                    <property name="margin-bottom">12</property>
+                    <child>
+                      <object class="GtkButton" id="btn_convert">
+                        <property name="label" translatable="yes">Convert</property>
+                        <property name="sensitive">False</property>
+                        <property name="width-request">200</property>
+                        <property name="cursor">
+                          <object class="GdkCursor">
+                            <property name="name">pointer</property>
+                          </object>
+                        </property>
+                        <style>
+                          <class name="suggested-action"/>
+                          <class name="pill"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
 
           </object>
         </property>
