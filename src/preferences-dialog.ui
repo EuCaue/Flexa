@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="Adw" version="1.0"/>
+  <template class="FlexaPreferencesDialog" parent="AdwPreferencesDialog">
+    <property name="title" translatable="yes">Preferences</property>
+
+    <child>
+      <object class="AdwPreferencesPage">
+        <property name="title" translatable="yes">General</property>
+        <property name="icon-name">preferences-system-symbolic</property>
+
+        <!-- Grupo General -->
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">General</property>
+            <property name="description" translatable="yes">Basic application settings</property>
+
+            <child>
+              <object class="AdwSwitchRow" id="dark_mode_row">
+                <property name="title" translatable="yes">Dark Mode</property>
+                <property name="subtitle" translatable="yes">Force dark theme regardless of system setting</property>
+              </object>
+            </child>
+
+            <child>
+              <object class="AdwComboRow" id="language_row">
+                <property name="title" translatable="yes">Language</property>
+                <property name="subtitle" translatable="yes">Application language</property>
+                <property name="model">
+                  <object class="GtkStringList">
+                    <items>
+                      <item translatable="yes">System Default</item>
+                      <item translatable="yes">English</item>
+                      <item translatable="yes">Português</item>
+                      <item translatable="yes">Español</item>
+                    </items>
+                  </object>
+                </property>
+              </object>
+            </child>
+
+          </object>
+        </child>
+
+        <!-- Grupo Output -->
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Output</property>
+            <property name="description" translatable="yes">Configure the conversion output</property>
+
+            <child>
+              <object class="AdwEntryRow" id="output_dir_row">
+                <property name="title" translatable="yes">Output Directory</property>
+              </object>
+            </child>
+
+            <child>
+              <object class="AdwSpinRow" id="quality_row">
+                <property name="title" translatable="yes">Quality</property>
+                <property name="subtitle" translatable="yes">Output quality percentage</property>
+                <property name="adjustment">
+                  <object class="GtkAdjustment">
+                    <property name="lower">0</property>
+                    <property name="upper">100</property>
+                    <property name="step-increment">1</property>
+                    <property name="value">80</property>
+                  </object>
+                </property>
+              </object>
+            </child>
+
+            <child>
+              <object class="AdwExpanderRow" id="advanced_row">
+                <property name="title" translatable="yes">Advanced</property>
+                <property name="subtitle" translatable="yes">Advanced output options</property>
+
+                <child>
+                  <object class="AdwSwitchRow" id="overwrite_row">
+                    <property name="title" translatable="yes">Overwrite existing files</property>
+                  </object>
+                </child>
+
+              </object>
+            </child>
+
+          </object>
+        </child>
+
+      </object>
+    </child>
+
+  </template>
+</interface>

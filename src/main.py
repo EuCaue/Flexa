@@ -30,6 +30,7 @@ from typing import TypedDict
 
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
+from .preferences import FlexaPreferencesDialog
 from .window import FlexaWindow
 
 
@@ -62,6 +63,7 @@ class FlexaApplication(Adw.Application):
             icon_name="folder-symbolic",
         )
         self.window = None
+        self.settings = Gio.Settings(schema_id="io.github.eucaue.flexa")
 
     def connect_signals(self):
         self.window.btn_add.connect("clicked", self.on_add_folders)
@@ -107,7 +109,7 @@ class FlexaApplication(Adw.Application):
                 folder_name = info.get_display_name()
 
                 # avoid duplicates
-                if any(f["folder_path"] == folder_path for f in self.files):
+                if any(f.folder_path == folder_path for f in self.files):
                     continue
 
                 row = self.on_create_folder_row(folder_name, folder_path)
@@ -185,6 +187,8 @@ class FlexaApplication(Adw.Application):
 
     def on_preferences_action(self, widget, _):
         """Callback for the app.preferences action."""
+        preferences = FlexaPreferencesDialog(settings=self.settings)
+        preferences.present(self.props.active_window)
         print("app.preferences action activated")
 
     # TODO: OPEN FILE DIALOG AND ADD FILES
