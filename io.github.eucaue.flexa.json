@@ -10,6 +10,7 @@
     "--socket=fallback-x11",
     "--device=dri",
     "--socket=wayland",
+    "--filesystem=home",
     "--env=PYTHONPATH=/app/lib/python3.13/site-packages",
     "--env=PATH=/app/bin:/usr/bin"
   ],

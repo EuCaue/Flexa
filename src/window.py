@@ -24,6 +24,7 @@ from gi.repository import Adw, Gtk
 class FlexaWindow(Adw.ApplicationWindow):
     __gtype_name__ = "FlexaWindow"
 
+    toast_overlay: Adw.ToastOverlay = Gtk.Template.Child()
     cursor_list: Gtk.ListBox = Gtk.Template.Child()
     btn_add: Gtk.Button = Gtk.Template.Child()
     btn_convert: Gtk.Button = Gtk.Template.Child()

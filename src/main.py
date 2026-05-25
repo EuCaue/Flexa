@@ -132,17 +132,29 @@ class FlexaApplication(Adw.Application):
 
     def on_convert_files(self, _):
         print(f"converting files: {self.files}")
-        for file in self.files:
+
+        for index, file in enumerate(self.files):
             file.spinner.set_spinning(True)
             file.stack.set_visible_child_name("spinner")
-            GLib.timeout_add(2000, self._on_conversion_done, file)
+            GLib.timeout_add(2000, self._on_conversion_done, file, index)
             print(f"converting file: {file}")
 
-    def _on_conversion_done(self, file: RowData):
+    def _on_conversion_done(self, file: RowData, index: int):
         file.spinner.set_spinning(False)
         file.stack.set_visible_child_name("check")
-        # TODO: remove "remove" button and show in output folder and remove from self.files
+        if index == len(self.files) - 1:
+            toast = Adw.Toast.new(title=_("Conversion complete!"))
+            toast.set_button_label(_("Open Folder"))
+            toast.connect("button-clicked", self.on_open_output_folder)
+            self.window.toast_overlay.add_toast(toast)
         return GLib.SOURCE_REMOVE
+
+    def on_open_output_folder(self, _toast):
+        home_dir = GLib.get_home_dir()
+        output_path = GLib.build_filenamev([home_dir, ".local", "share", "icons"])
+        file = Gio.File.new_for_path(output_path)
+        launcher = Gtk.FileLauncher.new(file)
+        launcher.launch(self.window, None, None)
 
     def do_activate(self):
         """Called when the application is activated.
