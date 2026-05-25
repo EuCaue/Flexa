@@ -25,16 +25,20 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
+from dataclasses import dataclass
 from typing import TypedDict
 
-from gi.repository import Adw, Gdk, Gio, Gtk
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 from .window import FlexaWindow
 
 
-class RowData(TypedDict):
+@dataclass
+class RowData:
     row_name: str
     folder_path: str
+    stack: Gtk.Stack
+    spinner: Gtk.Spinner
 
 
 class FlexaApplication(Adw.Application):
@@ -129,7 +133,16 @@ class FlexaApplication(Adw.Application):
     def on_convert_files(self, _):
         print(f"converting files: {self.files}")
         for file in self.files:
+            file["spinner"].set_spinning(True)
+            file["stack"].set_visible_child_name("spinner")
+            GLib.timeout_add(2000, self._on_conversion_done, file)
             print(f"converting file: {file}")
+
+    def _on_conversion_done(self, file: RowData):
+        file.spinner.set_spinning(False)
+        file.stack.set_visible_child_name("check")
+        # TODO: remove "remove" button and show in output folder and remove from self.files
+        return GLib.SOURCE_REMOVE
 
     def do_activate(self):
         """Called when the application is activated.
@@ -166,7 +179,6 @@ class FlexaApplication(Adw.Application):
     def on_add_folders(self, widget):
         """Callback for the app.add_files action."""
         print("Opened dialog")
-        # TODO: filter files by folders
         self.filesDialog.set_title("Select cursor folders")
         self.filesDialog.select_multiple_folders(
             self.window, None, self.on_select_folders, None
@@ -187,10 +199,10 @@ class FlexaApplication(Adw.Application):
                 self.window.cursor_list.append(row)
                 self.window.btn_convert.set_sensitive(True)
 
-    def on_remove_folder(self, row: Adw.ActionRow, row_name: str, folder_path: str):
-        print(f"removing folder: {row_name}")
+    def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData):
+        print(f"removing folder: {row_data.row_name}")
         self.window.cursor_list.remove(row)
-        self.files.remove({"row_name": row_name, "folder_path": folder_path})
+        self.files.remove(row_data)
         self.window.btn_convert.set_sensitive(len(self.files) > 0)
         return True
 
@@ -207,11 +219,31 @@ class FlexaApplication(Adw.Application):
             css_classes=["flat"],
             cursor=Gdk.Cursor.new_from_name("pointer"),
         )
-        remove_btn.connect(
-            "clicked", lambda _: self.on_remove_folder(row, row_name, row_folder_path)
+
+        status_stack = Gtk.Stack()
+        status_stack.set_valign(Gtk.Align.CENTER)
+        status_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        status_stack.set_transition_duration(300)
+
+        spinner = Gtk.Spinner(spinning=False)
+
+        check = Gtk.Image(icon_name="emblem-ok-symbolic")
+        check.add_css_class("success")
+
+        status_stack.add_named(spinner, "spinner")
+        status_stack.add_named(check, "check")
+        status_stack.set_visible_child_name("spinner")
+
+        row_data = RowData(
+            row_name=row_name,
+            folder_path=row_folder_path,
+            stack=status_stack,
+            spinner=spinner,
         )
-        self.files.append({"row_name": row_name, "folder_path": row_folder_path})
+        remove_btn.connect("clicked", lambda _: self.on_remove_folder(row, row_data))
+        self.files.append(row_data)
         row.add_prefix(folder_icon)
+        row.add_suffix(status_stack)
         row.add_suffix(remove_btn)
         return row
 
