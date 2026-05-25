@@ -133,8 +133,8 @@ class FlexaApplication(Adw.Application):
     def on_convert_files(self, _):
         print(f"converting files: {self.files}")
         for file in self.files:
-            file["spinner"].set_spinning(True)
-            file["stack"].set_visible_child_name("spinner")
+            file.spinner.set_spinning(True)
+            file.stack.set_visible_child_name("spinner")
             GLib.timeout_add(2000, self._on_conversion_done, file)
             print(f"converting file: {file}")
 
