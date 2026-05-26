@@ -26,10 +26,12 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TypedDict
 
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
+from .cursor_converter import ConversionResult, ConversionStatus, CursorConverter
 from .preferences import FlexaPreferencesDialog
 from .window import FlexaWindow
 
@@ -64,6 +66,7 @@ class FlexaApplication(Adw.Application):
         )
         self.window = None
         self.settings = Gio.Settings(schema_id="io.github.eucaue.flexa")
+        self.converter: CursorConverter | None = None
 
     def connect_signals(self):
         self.window.btn_add.connect("clicked", self.on_add_folders)
@@ -134,26 +137,50 @@ class FlexaApplication(Adw.Application):
 
     def on_convert_files(self, _):
         print(f"converting files: {self.files}")
+        self.window.btn_convert.set_sensitive(False)
+        self.window.btn_add.set_sensitive(False)
+        self.converter = CursorConverter(
+            output_dir=Path("~/code/flexa/dist").expanduser(),
+            on_progress=self._on_conversion_progress,
+            on_all_done=self._show_done_toast,  # idem
+        )
+        self.converter.add_many([Path(f.folder_path) for f in self.files])
+        self.converter.start()
 
-        for index, file in enumerate(self.files):
-            file.spinner.set_spinning(True)
-            file.stack.set_visible_child_name("spinner")
-            GLib.timeout_add(2000, self._on_conversion_done, file, index)
-            print(f"converting file: {file}")
+    def _on_conversion_progress(self, result: ConversionResult):
+        file = next(
+            (f for f in self.files if Path(f.folder_path) == result.folder_path), None
+        )
+        if file is None:
+            return
+        # TODO: Change convert button status to loading
+        match result.status:
+            case ConversionStatus.RUNNING:
+                file.spinner.set_spinning(True)
+                file.stack.set_visible_child_name("spinner")
+            case ConversionStatus.DONE:
+                file.spinner.set_spinning(False)
+                file.stack.set_visible_child_name("check")
+            case ConversionStatus.CANCELED | ConversionStatus.ERROR:
+                file.spinner.set_spinning(False)
+                file.stack.set_visible_child_name("error")
 
-    def _on_conversion_done(self, file: RowData, index: int):
-        file.spinner.set_spinning(False)
-        file.stack.set_visible_child_name("check")
-        if index == len(self.files) - 1:
-            toast = Adw.Toast.new(title=_("Conversion complete!"))
-            toast.set_button_label(_("Open Folder"))
-            toast.connect("button-clicked", self.on_open_output_folder)
-            self.window.toast_overlay.add_toast(toast)
-        return GLib.SOURCE_REMOVE
+    def _show_done_toast(self, results: list[ConversionResult]):
+        done = sum(1 for r in results if r.status == ConversionStatus.DONE)
+        total = len(results)
+        toast = Adw.Toast(
+            title=f"{done}/{total} cursor{'' if done <= 1 and total <= 1 else 's'} converted successfully!"
+        )
+        toast.set_button_label(_("Open"))
+        toast.connect("button-clicked", self.on_open_output_folder)
+        self.window.btn_convert.set_sensitive(True)
+        self.window.btn_add.set_sensitive(True)
+        self.window.toast_overlay.add_toast(toast)
 
     def on_open_output_folder(self, _toast):
-        home_dir = GLib.get_home_dir()
-        output_path = GLib.build_filenamev([home_dir, ".local", "share", "icons"])
+        # TODO: use a diff path in dev mode
+        raw_output_path = self.converter.output_dir.parts
+        output_path = GLib.build_filenamev(raw_output_path)
         file = Gio.File.new_for_path(output_path)
         launcher = Gtk.FileLauncher.new(file)
         launcher.launch(self.window, None, None)
@@ -216,16 +243,20 @@ class FlexaApplication(Adw.Application):
                 self.window.btn_convert.set_sensitive(True)
 
     def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData):
+        # TODO: on remove, it should remove from the queue
         print(f"removing folder: {row_data.row_name}")
         self.window.cursor_list.remove(row)
         self.files.remove(row_data)
         self.window.btn_convert.set_sensitive(len(self.files) > 0)
+        if self.converter is not None:
+            self.converter.remove(Path(row_data.folder_path))
         return True
 
     def on_create_folder_row(self, row_name: str, row_folder_path: str):
         row = Adw.ActionRow(
             title=row_name,
             subtitle=row_folder_path,
+            tooltip_text=row_folder_path,
         )
         folder_icon = Gtk.Image(icon_name="folder-symbolic")
         remove_btn = Gtk.Button(
@@ -246,8 +277,12 @@ class FlexaApplication(Adw.Application):
         check = Gtk.Image(icon_name="emblem-ok-symbolic")
         check.add_css_class("success")
 
+        error = Gtk.Image(icon_name="dialog-error-symbolic")
+        error.add_css_class("error")
+
         status_stack.add_named(spinner, "spinner")
         status_stack.add_named(check, "check")
+        status_stack.add_named(error, "error")
         status_stack.set_visible_child_name("spinner")
 
         row_data = RowData(

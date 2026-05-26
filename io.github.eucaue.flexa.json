@@ -11,6 +11,7 @@
     "--device=dri",
     "--socket=wayland",
     "--filesystem=home",
+    "--talk-name=org.freedesktop.Flatpak",
     "--env=PYTHONPATH=/app/lib/python3.13/site-packages",
     "--env=PATH=/app/bin:/usr/bin"
   ],

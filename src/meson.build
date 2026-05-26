@@ -32,6 +32,7 @@ flexa_sources = [
     'main.py',
     'window.py',
     'preferences.py',
+    'cursor_converter.py',
 ]
 
 install_data(flexa_sources, install_dir: moduledir)
