@@ -139,8 +139,9 @@ class FlexaApplication(Adw.Application):
         print(f"converting files: {self.files}")
         self.window.btn_convert.set_sensitive(False)
         self.window.btn_add.set_sensitive(False)
+        self.window.btn_convert.set_child(Gtk.Spinner(spinning=True))
         self.converter = CursorConverter(
-            output_dir=Path("~/code/flexa/dist").expanduser(),
+            output_dir=Path(self.settings.get_string("output-dir")).expanduser(),
             on_progress=self._on_conversion_progress,
             on_all_done=self._show_done_toast,  # idem
         )
@@ -153,7 +154,6 @@ class FlexaApplication(Adw.Application):
         )
         if file is None:
             return
-        # TODO: Change convert button status to loading
         match result.status:
             case ConversionStatus.RUNNING:
                 file.spinner.set_spinning(True)
@@ -174,6 +174,7 @@ class FlexaApplication(Adw.Application):
         toast.set_button_label(_("Open"))
         toast.connect("button-clicked", self.on_open_output_folder)
         self.window.btn_convert.set_sensitive(True)
+        self.window.btn_convert.set_label(_("Convert"))
         self.window.btn_add.set_sensitive(True)
         self.window.toast_overlay.add_toast(toast)
 
@@ -218,7 +219,6 @@ class FlexaApplication(Adw.Application):
         preferences.present(self.props.active_window)
         print("app.preferences action activated")
 
-    # TODO: OPEN FILE DIALOG AND ADD FILES
     def on_add_folders(self, widget):
         """Callback for the app.add_files action."""
         print("Opened dialog")
@@ -229,22 +229,16 @@ class FlexaApplication(Adw.Application):
 
     def on_select_folders(self, dialog, result, _):
         folders: Gtk.ListStore = dialog.select_multiple_folders_finish(result)
-        print(f"folders: {folders}")
         if folders is not None:
             for i in range(folders.get_n_items()):
-                # TODO: selected file: /run/user/1000/doc/2c0a20f7/wall.excalidraw
-                # check if i can really use this.
                 folder = folders.get_item(i)
                 folder_path = folder.get_path()
                 folder_name = folder.get_basename()
-                print(f"selected folder: {folder_path}")
                 row = self.on_create_folder_row(folder_name, folder_path)
                 self.window.cursor_list.append(row)
                 self.window.btn_convert.set_sensitive(True)
 
     def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData):
-        # TODO: on remove, it should remove from the queue
-        print(f"removing folder: {row_data.row_name}")
         self.window.cursor_list.remove(row)
         self.files.remove(row_data)
         self.window.btn_convert.set_sensitive(len(self.files) > 0)
