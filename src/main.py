@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypedDict
 
-from gi.repository import Adw, Gdk, Gio, GLib, Gtk
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk, Pango
 
 from .cursor_converter import ConversionResult, ConversionStatus, CursorConverter
 from .preferences import FlexaPreferencesDialog
@@ -91,42 +91,47 @@ class FlexaApplication(Adw.Application):
         drop_target.connect("leave", self.on_drop_leave)
         self.window.cursor_list.add_controller(drop_target)
 
+    def _folder_already_added(self, folder_path: str) -> bool:
+        """Check if folder is already in the list."""
+        return any(f.folder_path == folder_path for f in self.files)
+
+    def _has_cursor_files(self, folder_path: str) -> bool:
+        """Check if folder contains Windows cursor files."""
+        cursor_extensions = {".cur", ".ani"}
+        cursor_files = {"install.inf"}
+
+        try:
+            path = Path(folder_path)
+            for item in path.iterdir():
+                if item.suffix.lower() in cursor_extensions:
+                    return True
+                if item.name.lower() in cursor_files:
+                    return True
+        except Exception:
+            pass
+
+        return False
+
     def on_drop_folders(
         self, target: Gtk.DropTarget, value: Gdk.FileList, x: int, y: int
     ):
-        files = value.get_files()  # files dragged
-        added = 0
+        folders = [
+            (
+                f.get_path(),
+                f.query_info(
+                    "standard::display-name", Gio.FileQueryInfoFlags.NONE, None
+                ).get_display_name(),
+            )
+            for f in value.get_files()
+            if f.query_info(
+                "standard::type", Gio.FileQueryInfoFlags.NONE, None
+            ).get_file_type()
+            == Gio.FileType.DIRECTORY
+        ]
 
-        for gfile in files:
-            try:
-                info = gfile.query_info(
-                    "standard::type,standard::display-name",
-                    Gio.FileQueryInfoFlags.NONE,
-                    None,
-                )
-                # accept only directories
-                if info.get_file_type() != Gio.FileType.DIRECTORY:
-                    continue
-
-                folder_path = gfile.get_path()
-                folder_name = info.get_display_name()
-
-                # avoid duplicates
-                if any(f.folder_path == folder_path for f in self.files):
-                    continue
-
-                row = self.on_create_folder_row(folder_name, folder_path)
-                self.window.cursor_list.append(row)
-                added += 1
-
-            except Exception as e:
-                print(f"Error while processing file: {e}")
-
-        if added > 0:
-            self.window.btn_convert.set_sensitive(True)
-
+        added = self._add_folders(folders)
         self.on_drop_leave(target)
-        return added > 0  # reject visually if no folders were added
+        return added > 0
 
     def on_drop_enter(self, target, x, y):
         self.window.cursor_list.add_css_class("drop-target")
@@ -143,7 +148,7 @@ class FlexaApplication(Adw.Application):
         self.converter = CursorConverter(
             output_dir=Path(self.settings.get_string("output-dir")).expanduser(),
             on_progress=self._on_conversion_progress,
-            on_all_done=self._show_done_toast,  # idem
+            on_all_done=self._show_done_toast,  # same as above
         )
         self.converter.add_many([Path(f.folder_path) for f in self.files])
         self.converter.start()
@@ -179,7 +184,6 @@ class FlexaApplication(Adw.Application):
         self.window.toast_overlay.add_toast(toast)
 
     def on_open_output_folder(self, _toast):
-        # TODO: use a diff path in dev mode
         raw_output_path = self.converter.output_dir.parts
         output_path = GLib.build_filenamev(raw_output_path)
         file = Gio.File.new_for_path(output_path)
@@ -228,15 +232,56 @@ class FlexaApplication(Adw.Application):
         )
 
     def on_select_folders(self, dialog, result, _):
-        folders: Gtk.ListStore = dialog.select_multiple_folders_finish(result)
-        if folders is not None:
-            for i in range(folders.get_n_items()):
-                folder = folders.get_item(i)
-                folder_path = folder.get_path()
-                folder_name = folder.get_basename()
-                row = self.on_create_folder_row(folder_name, folder_path)
-                self.window.cursor_list.append(row)
-                self.window.btn_convert.set_sensitive(True)
+        folders_model = dialog.select_multiple_folders_finish(result)
+        if folders_model is None:
+            return
+
+        folders = [
+            (f.get_path(), f.get_basename())
+            for i in range(folders_model.get_n_items())
+            if (f := folders_model.get_item(i))
+        ]
+
+        self._add_folders(folders)
+
+    def _on_invalid_folders(self, rejected: list[str]):
+        rejected_list = "\n".join(f"• {name}" for name in rejected)
+
+        dialog = Adw.AlertDialog(
+            heading="No cursor files found",
+            body=f"{rejected_list}\n\n{'Expected *.cur, *.ani or install.inf inside the folder.'}",
+        )
+        dialog.add_response("ok", "OK")
+        dialog.set_default_response("ok")
+        dialog.present(self.window)
+
+    def _add_folders(self, folders: list[tuple[str, str]]) -> int:
+        """
+        Receives list of (path, name), validates and adds the rows.
+        Returns the number of folders added.
+        """
+        added = 0
+        rejected = []
+
+        for folder_path, folder_name in folders:
+            if not folder_path:
+                continue
+            if self._folder_already_added(folder_path):
+                continue
+            if not self._has_cursor_files(folder_path):
+                rejected.append(folder_name)
+                continue
+
+            row = self.on_create_folder_row(folder_name, folder_path)
+            self.window.cursor_list.append(row)
+            added += 1
+
+        if added > 0:
+            self.window.btn_convert.set_sensitive(True)
+        if rejected:
+            self._on_invalid_folders(rejected)
+
+        return added
 
     def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData):
         self.window.cursor_list.remove(row)
