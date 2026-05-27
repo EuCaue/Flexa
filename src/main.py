@@ -53,13 +53,13 @@ class FlexaApplication(Adw.Application):
             flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
             resource_base_path="/io/github/eucaue/flexa",
         )
-        self.create_action("quit", lambda *_: self.quit(), ["<control>q"])
-        self.create_action("about", self.on_about_action)
-        self.create_action("preferences", self.on_preferences_action)
-        self.create_action("shortcuts", self.on_shortcuts_action)
-        self.files: list[RowData] = []
-        self.filesDialog: Gtk.FileDialog = Gtk.FileDialog()
-        self.empty_state: Adw.StatusPage = Adw.StatusPage(
+        self._create_action("quit", lambda *_: self.quit(), ["<control>q"])
+        self._create_action("about", self.on_about_action)
+        self._create_action("preferences", self.on_preferences_action)
+        self._create_action("shortcuts", self.on_shortcuts_action)
+        self.folder_rows: list[RowData] = []
+        self.folder_dialog: Gtk.FileDialog = Gtk.FileDialog()
+        self.empty_status_page: Adw.StatusPage = Adw.StatusPage(
             title="No Folders Added",
             description="Drag folders here or click the button below",
             icon_name="folder-symbolic",
@@ -67,128 +67,6 @@ class FlexaApplication(Adw.Application):
         self.window = None
         self.settings = Gio.Settings(schema_id="io.github.eucaue.flexa")
         self.converter: CursorConverter | None = None
-
-    def connect_signals(self):
-        self.window.btn_add.connect("clicked", self.on_add_folders)
-        self.window.btn_convert.connect("clicked", self.on_convert_files)
-        self.setup_drop_target()
-        self.setup_empty_state()
-
-    def setup_empty_state(self):
-        self.window.cursor_list.set_placeholder(self.empty_state)
-        click = Gtk.GestureClick()
-        click.connect("pressed", self.on_list_clicked)
-        self.empty_state.add_controller(click)
-
-    def on_list_clicked(self, gesture: Gtk.GestureClick, x: float, y: float, _):
-        if len(self.files) == 0:
-            self.on_add_folders(None)
-
-    def setup_drop_target(self):
-        drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
-        drop_target.connect("drop", self.on_drop_folders)
-        drop_target.connect("enter", self.on_drop_enter)
-        drop_target.connect("leave", self.on_drop_leave)
-        self.window.cursor_list.add_controller(drop_target)
-
-    def _folder_already_added(self, folder_path: str) -> bool:
-        """Check if folder is already in the list."""
-        return any(f.folder_path == folder_path for f in self.files)
-
-    def _has_cursor_files(self, folder_path: str) -> bool:
-        """Check if folder contains Windows cursor files."""
-        cursor_extensions = {".cur", ".ani"}
-        cursor_files = {"install.inf"}
-
-        try:
-            path = Path(folder_path)
-            for item in path.iterdir():
-                if item.suffix.lower() in cursor_extensions:
-                    return True
-                if item.name.lower() in cursor_files:
-                    return True
-        except Exception:
-            pass
-
-        return False
-
-    def on_drop_folders(
-        self, target: Gtk.DropTarget, value: Gdk.FileList, x: int, y: int
-    ):
-        folders = [
-            (
-                f.get_path(),
-                f.query_info(
-                    "standard::display-name", Gio.FileQueryInfoFlags.NONE, None
-                ).get_display_name(),
-            )
-            for f in value.get_files()
-            if f.query_info(
-                "standard::type", Gio.FileQueryInfoFlags.NONE, None
-            ).get_file_type()
-            == Gio.FileType.DIRECTORY
-        ]
-
-        added = self._add_folders(folders)
-        self.on_drop_leave(target)
-        return added > 0
-
-    def on_drop_enter(self, target, x, y):
-        self.window.cursor_list.add_css_class("drop-target")
-        return Gdk.DragAction.COPY
-
-    def on_drop_leave(self, target):
-        self.window.cursor_list.remove_css_class("drop-target")
-
-    def on_convert_files(self, _):
-        print(f"converting files: {self.files}")
-        self.window.btn_convert.set_sensitive(False)
-        self.window.btn_add.set_sensitive(False)
-        self.window.btn_convert.set_child(Gtk.Spinner(spinning=True))
-        self.converter = CursorConverter(
-            output_dir=Path(self.settings.get_string("output-dir")).expanduser(),
-            on_progress=self._on_conversion_progress,
-            on_all_done=self._show_done_toast,  # same as above
-        )
-        self.converter.add_many([Path(f.folder_path) for f in self.files])
-        self.converter.start()
-
-    def _on_conversion_progress(self, result: ConversionResult):
-        file = next(
-            (f for f in self.files if Path(f.folder_path) == result.folder_path), None
-        )
-        if file is None:
-            return
-        match result.status:
-            case ConversionStatus.RUNNING:
-                file.spinner.set_spinning(True)
-                file.stack.set_visible_child_name("spinner")
-            case ConversionStatus.DONE:
-                file.spinner.set_spinning(False)
-                file.stack.set_visible_child_name("check")
-            case ConversionStatus.CANCELED | ConversionStatus.ERROR:
-                file.spinner.set_spinning(False)
-                file.stack.set_visible_child_name("error")
-
-    def _show_done_toast(self, results: list[ConversionResult]):
-        done = sum(1 for r in results if r.status == ConversionStatus.DONE)
-        total = len(results)
-        toast = Adw.Toast(
-            title=f"{done}/{total} cursor{'' if done <= 1 and total <= 1 else 's'} converted successfully!"
-        )
-        toast.set_button_label(_("Open"))
-        toast.connect("button-clicked", self.on_open_output_folder)
-        self.window.btn_convert.set_sensitive(True)
-        self.window.btn_convert.set_label(_("Convert"))
-        self.window.btn_add.set_sensitive(True)
-        self.window.toast_overlay.add_toast(toast)
-
-    def on_open_output_folder(self, _toast):
-        raw_output_path = self.converter.output_dir.parts
-        output_path = GLib.build_filenamev(raw_output_path)
-        file = Gio.File.new_for_path(output_path)
-        launcher = Gtk.FileLauncher.new(file)
-        launcher.launch(self.window, None, None)
 
     def do_activate(self):
         """Called when the application is activated.
@@ -202,6 +80,27 @@ class FlexaApplication(Adw.Application):
         self.window = win
         win.present()
         self.connect_signals()
+
+    def connect_signals(self):
+        self.window.btn_add.connect("clicked", self.on_add_folders)
+        self.window.btn_convert.connect("clicked", self.on_convert_files)
+        self.setup_drop_target()
+        self.setup_empty_state()
+
+    def _create_action(self, name, callback, shortcuts=None):
+        """Add an application action.
+
+        Args:
+            name: the name of the action
+            callback: the function to be called when the action is
+              activated
+            shortcuts: an optional list of accelerators
+        """
+        action = Gio.SimpleAction.new(name, None)
+        action.connect("activate", callback)
+        self.add_action(action)
+        if shortcuts:
+            self.set_accels_for_action(f"app.{name}", shortcuts)
 
     def on_about_action(self, *args):
         """Callback for the app.about action."""
@@ -223,11 +122,19 @@ class FlexaApplication(Adw.Application):
         preferences.present(self.props.active_window)
         print("app.preferences action activated")
 
+    def on_shortcuts_action(self, widget, _):
+        print("app shortcuts called...")
+        builder = Gtk.Builder.new_from_resource(
+            "/io/github/eucaue/flexa/shortcuts-dialog.ui"
+        )
+        dialog = builder.get_object("shortcuts_dialog")
+        dialog.present(self.props.active_window)
+
     def on_add_folders(self, widget):
         """Callback for the app.add_files action."""
         print("Opened dialog")
-        self.filesDialog.set_title("Select cursor folders")
-        self.filesDialog.select_multiple_folders(
+        self.folder_dialog.set_title("Select cursor folders")
+        self.folder_dialog.select_multiple_folders(
             self.window, None, self.on_select_folders, None
         )
 
@@ -243,17 +150,6 @@ class FlexaApplication(Adw.Application):
         ]
 
         self._add_folders(folders)
-
-    def _on_invalid_folders(self, rejected: list[str]):
-        rejected_list = "\n".join(f"• {name}" for name in rejected)
-
-        dialog = Adw.AlertDialog(
-            heading="No cursor files found",
-            body=f"{rejected_list}\n\n{'Expected *.cur, *.ani or install.inf inside the folder.'}",
-        )
-        dialog.add_response("ok", "OK")
-        dialog.set_default_response("ok")
-        dialog.present(self.window)
 
     def _add_folders(self, folders: list[tuple[str, str]]) -> int:
         """
@@ -279,17 +175,41 @@ class FlexaApplication(Adw.Application):
         if added > 0:
             self.window.btn_convert.set_sensitive(True)
         if rejected:
-            self._on_invalid_folders(rejected)
+            self._show_invalid_folders_dialog(rejected)
 
         return added
 
-    def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData):
-        self.window.cursor_list.remove(row)
-        self.files.remove(row_data)
-        self.window.btn_convert.set_sensitive(len(self.files) > 0)
-        if self.converter is not None:
-            self.converter.remove(Path(row_data.folder_path))
-        return True
+    def _folder_already_added(self, folder_path: str) -> bool:
+        """Check if folder is already in the list."""
+        return any(f.folder_path == folder_path for f in self.folder_rows)
+
+    def _has_cursor_files(self, folder_path: str) -> bool:
+        """Check if folder contains Windows cursor files."""
+        cursor_extensions = {".cur", ".ani"}
+        cursor_files = {"install.inf"}
+
+        try:
+            path = Path(folder_path)
+            for item in path.iterdir():
+                if item.suffix.lower() in cursor_extensions:
+                    return True
+                if item.name.lower() in cursor_files:
+                    return True
+        except Exception:
+            pass
+
+        return False
+
+    def _show_invalid_folders_dialog(self, rejected: list[str]):
+        rejected_list = "\n".join(f"• {name}" for name in rejected)
+
+        dialog = Adw.AlertDialog(
+            heading="No cursor files found",
+            body=f"{rejected_list}\n\n{'Expected *.cur, *.ani or install.inf inside the folder.'}",
+        )
+        dialog.add_response("ok", "OK")
+        dialog.set_default_response("ok")
+        dialog.present(self.window)
 
     def on_create_folder_row(self, row_name: str, row_folder_path: str):
         row = Adw.ActionRow(
@@ -331,34 +251,114 @@ class FlexaApplication(Adw.Application):
             spinner=spinner,
         )
         remove_btn.connect("clicked", lambda _: self.on_remove_folder(row, row_data))
-        self.files.append(row_data)
+        self.folder_rows.append(row_data)
         row.add_prefix(folder_icon)
         row.add_suffix(status_stack)
         row.add_suffix(remove_btn)
         return row
 
-    def on_shortcuts_action(self, widget, _):
-        print("app shortcuts called...")
-        builder = Gtk.Builder.new_from_resource(
-            "/io/github/eucaue/flexa/shortcuts-dialog.ui"
+    def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData):
+        self.window.cursor_list.remove(row)
+        self.folder_rows.remove(row_data)
+        self.window.btn_convert.set_sensitive(len(self.folder_rows) > 0)
+        if self.converter is not None:
+            self.converter.remove(Path(row_data.folder_path))
+        return True
+
+    def setup_drop_target(self):
+        drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
+        drop_target.connect("drop", self.on_drop_folders)
+        drop_target.connect("enter", self.on_drop_enter)
+        drop_target.connect("leave", self.on_drop_leave)
+        self.window.cursor_list.add_controller(drop_target)
+
+    def on_drop_folders(
+        self, target: Gtk.DropTarget, value: Gdk.FileList, x: int, y: int
+    ):
+        folders = [
+            (
+                f.get_path(),
+                f.query_info(
+                    "standard::display-name", Gio.FileQueryInfoFlags.NONE, None
+                ).get_display_name(),
+            )
+            for f in value.get_files()
+            if f.query_info(
+                "standard::type", Gio.FileQueryInfoFlags.NONE, None
+            ).get_file_type()
+            == Gio.FileType.DIRECTORY
+        ]
+
+        added = self._add_folders(folders)
+        self.on_drop_leave(target)
+        return added > 0
+
+    def on_drop_enter(self, target, x, y):
+        self.window.cursor_list.add_css_class("drop-target")
+        return Gdk.DragAction.COPY
+
+    def on_drop_leave(self, target):
+        self.window.cursor_list.remove_css_class("drop-target")
+
+    def setup_empty_state(self):
+        self.window.cursor_list.set_placeholder(self.empty_status_page)
+        click = Gtk.GestureClick()
+        click.connect("pressed", self.on_empty_state_clicked)
+        self.empty_status_page.add_controller(click)
+
+    def on_empty_state_clicked(self, gesture: Gtk.GestureClick, x: float, y: float, _):
+        if len(self.folder_rows) == 0:
+            self.on_add_folders(None)
+
+    def on_convert_files(self, _):
+        print(f"converting files: {self.folder_rows}")
+        self.window.btn_convert.set_sensitive(False)
+        self.window.btn_add.set_sensitive(False)
+        self.window.btn_convert.set_child(Gtk.Spinner(spinning=True))
+        self.converter = CursorConverter(
+            output_dir=Path(self.settings.get_string("output-dir")).expanduser(),
+            on_progress=self._on_conversion_progress,
+            on_all_done=self._show_done_toast,  # same as above
         )
-        dialog = builder.get_object("shortcuts_dialog")
-        dialog.present(self.props.active_window)
+        self.converter.add_many([Path(f.folder_path) for f in self.folder_rows])
+        self.converter.start()
 
-    def create_action(self, name, callback, shortcuts=None):
-        """Add an application action.
+    def _on_conversion_progress(self, result: ConversionResult):
+        file = next(
+            (f for f in self.folder_rows if Path(f.folder_path) == result.folder_path), None
+        )
+        if file is None:
+            return
+        match result.status:
+            case ConversionStatus.RUNNING:
+                file.spinner.set_spinning(True)
+                file.stack.set_visible_child_name("spinner")
+            case ConversionStatus.DONE:
+                file.spinner.set_spinning(False)
+                file.stack.set_visible_child_name("check")
+            case ConversionStatus.CANCELED | ConversionStatus.ERROR:
+                file.spinner.set_spinning(False)
+                file.stack.set_visible_child_name("error")
 
-        Args:
-            name: the name of the action
-            callback: the function to be called when the action is
-              activated
-            shortcuts: an optional list of accelerators
-        """
-        action = Gio.SimpleAction.new(name, None)
-        action.connect("activate", callback)
-        self.add_action(action)
-        if shortcuts:
-            self.set_accels_for_action(f"app.{name}", shortcuts)
+    def _show_done_toast(self, results: list[ConversionResult]):
+        done = sum(1 for r in results if r.status == ConversionStatus.DONE)
+        total = len(results)
+        toast = Adw.Toast(
+            title=f"{done}/{total} cursor{'' if done <= 1 and total <= 1 else 's'} converted successfully!"
+        )
+        toast.set_button_label(_("Open"))
+        toast.connect("button-clicked", self.on_open_output_dir)
+        self.window.btn_convert.set_sensitive(True)
+        self.window.btn_convert.set_label(_("Convert"))
+        self.window.btn_add.set_sensitive(True)
+        self.window.toast_overlay.add_toast(toast)
+
+    def on_open_output_dir(self, _toast):
+        raw_output_path = self.converter.output_dir.parts
+        output_path = GLib.build_filenamev(raw_output_path)
+        file = Gio.File.new_for_path(output_path)
+        launcher = Gtk.FileLauncher.new(file)
+        launcher.launch(self.window, None, None)
 
 
 def main(version):
