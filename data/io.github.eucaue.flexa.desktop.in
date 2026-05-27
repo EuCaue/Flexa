@@ -1,10 +1,12 @@
 [Desktop Entry]
 Name=Flexa
+GenericName=Windows Cursor Converter
+Comment=Convert Windows cursor themes to Linux format
 Exec=flexa
 Icon=io.github.eucaue.flexa
 Terminal=false
 Type=Application
-Categories=Utility;
-Keywords=GTK;
+Categories=Graphics;Utility;
+Keywords=cursor;theme;convert;windows;linux;mouse;pointer;
 StartupNotify=true
 DBusActivatable=true

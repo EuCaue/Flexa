@@ -1,0 +1,168 @@
+# Brazilian Portuguese translation for Flexa.
+# Copyright (C) 2026 Flexa Authors
+# This file is distributed under the same license as the flexa package.
+# caue <caue@fedora>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: flexa\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-27 19:15-0300\n"
+"PO-Revision-Date: 2026-05-27 20:00-0300\n"
+"Last-Translator: caue <caue@fedora>\n"
+"Language-Team: Brazilian Portuguese\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: data/io.github.eucaue.flexa.desktop.in:4
+msgid "Windows Cursor Converter"
+msgstr "Conversor de Cursores do Windows"
+
+#: data/io.github.eucaue.flexa.desktop.in:5
+#: data/io.github.eucaue.flexa.metainfo.xml.in:10
+msgid "Convert Windows cursor themes to Linux format"
+msgstr "Converta temas de cursores do Windows para o formato Linux"
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:12
+msgid ""
+"Flexa is a simple GNOME application that converts Windows cursor themes (."
+"cur and .ani files) to the Linux XCursor format. It provides a clean, "
+"intuitive interface following the GNOME Human Interface Guidelines."
+msgstr ""
+"O Flexa é um aplicativo GNOME simples que converte temas de cursores do "
+"Windows (arquivos .cur e .ani) para o formato XCursor do Linux. Ele fornece "
+"uma interface limpa e intuitiva seguindo as diretrizes de interface humana "
+"do GNOME."
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:18
+msgid ""
+"Add multiple cursor folders at once — either through the file picker or by "
+"dragging and dropping them into the window. Flexa will scan each folder for "
+"cursors and convert them all with a single click. When done, a toast "
+"notification lets you open the output directory instantly."
+msgstr ""
+"Adicione várias pastas de cursores de uma vez — seja pelo seletor de "
+"arquivos ou arrastando e soltando na janela. O Flexa verificará cada pasta "
+"em busca de cursores e converterá todos com um único clique. Quando "
+"terminar, uma notificação permite abrir o diretório de saída "
+"instantaneamente."
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:25
+msgid ""
+"The output directory is configurable in Preferences and defaults to ~/."
+"local/share/icons, so converted themes are immediately available in GNOME "
+"Settings → Appearance."
+msgstr ""
+"O diretório de saída é configurável nas Preferências e o padrão é ~/."
+"local/share/icons, para que os temas convertidos fiquem imediatamente "
+"disponíveis em Configurações do GNOME → Aparência."
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:57
+msgid "Main window with cursor folders added"
+msgstr "Janela principal com pastas de cursores adicionadas"
+
+#: src/main.py:63
+msgid "No Folders Added"
+msgstr "Nenhuma Pasta Adicionada"
+
+#: src/main.py:64
+msgid "Drag folders here or click the button below"
+msgstr "Arraste pastas aqui ou clique no botão abaixo"
+
+#. Translators: Replace "translator-credits" with your name/username, and optionally an email or URL.
+#: src/main.py:113
+msgid "translator-credits"
+msgstr "caue <caue@fedora>"
+
+#: src/main.py:128
+msgid "Select cursor folders"
+msgstr "Selecionar pastas de cursores"
+
+#: src/main.py:211
+msgid "No cursor files found"
+msgstr "Nenhum arquivo de cursor encontrado"
+
+#: src/main.py:212
+msgid "Expected *.cur, *.ani or install.inf inside the folder."
+msgstr "Esperado *.cur, *.ani ou install.inf dentro da pasta."
+
+#: src/main.py:215
+msgid "OK"
+msgstr "OK"
+
+#: src/main.py:227
+msgid "Remove"
+msgstr "Remover"
+
+#: src/main.py:352
+msgid "Conversion completed"
+msgstr "Conversão concluída"
+
+#: src/main.py:354
+msgid "Open"
+msgstr "Abrir"
+
+#: src/main.py:357
+msgid "Convert"
+msgstr "Converter"
+
+#: src/window.ui:21
+msgid "Add cursor folder"
+msgstr "Adicionar pasta de cursores"
+
+#: src/window.ui:35
+msgid "Main Menu"
+msgstr "Menu Principal"
+
+#: src/window.ui:99
+msgid "_Preferences"
+msgstr "_Preferências"
+
+#: src/window.ui:103
+msgid "_Keyboard Shortcuts"
+msgstr "Atalhos de _Teclado"
+
+#: src/window.ui:107
+msgid "_About Flexa"
+msgstr "_Sobre o Flexa"
+
+#: src/preferences-dialog.ui:8
+msgid "Preferences"
+msgstr "Preferências"
+
+#: src/preferences-dialog.ui:11
+msgid "General"
+msgstr "Geral"
+
+#: src/preferences-dialog.ui:16
+msgid "Output"
+msgstr "Saída"
+
+#: src/preferences-dialog.ui:17
+msgid "Configure the conversion output"
+msgstr "Configurar a saída da conversão"
+
+#: src/preferences-dialog.ui:21
+msgid "Output Directory"
+msgstr "Diretório de Saída"
+
+#: src/preferences-dialog.ui:27
+msgid "Browse…"
+msgstr "Procurar…"
+
+#: src/shortcuts-dialog.ui:6
+msgid "Shortcuts"
+msgstr "Atalhos"
+
+#: src/shortcuts-dialog.ui:9
+msgctxt "shortcut window"
+msgid "Show Shortcuts"
+msgstr "Mostrar Atalhos"
+
+#: src/shortcuts-dialog.ui:15
+msgctxt "shortcut window"
+msgid "Quit"
+msgstr "Sair"

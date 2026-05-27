@@ -4,5 +4,8 @@ data/io.github.eucaue.flexa.desktop.in
 data/io.github.eucaue.flexa.metainfo.xml.in
 data/io.github.eucaue.flexa.gschema.xml
 src/main.py
+src/preferences-dialog.ui
+src/preferences.py
+src/shortcuts-dialog.ui
 src/window.py
 src/window.ui

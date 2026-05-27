@@ -60,8 +60,8 @@ class FlexaApplication(Adw.Application):
         self.folder_rows: list[RowData] = []
         self.folder_dialog: Gtk.FileDialog = Gtk.FileDialog()
         self.empty_status_page: Adw.StatusPage = Adw.StatusPage(
-            title="No Folders Added",
-            description="Drag folders here or click the button below",
+            title=_("No Folders Added"),
+            description=_("Drag folders here or click the button below"),
             icon_name="folder-symbolic",
         )
         self.window = None
@@ -133,7 +133,7 @@ class FlexaApplication(Adw.Application):
     def on_add_folders(self, widget):
         """Callback for the app.add_files action."""
         print("Opened dialog")
-        self.folder_dialog.set_title("Select cursor folders")
+        self.folder_dialog.set_title(_("Select cursor folders"))
         self.folder_dialog.select_multiple_folders(
             self.window, None, self.on_select_folders, None
         )
@@ -208,10 +208,10 @@ class FlexaApplication(Adw.Application):
         rejected_list = "\n".join(f"• {name}" for name in rejected)
 
         dialog = Adw.AlertDialog(
-            heading="No cursor files found",
-            body=f"{rejected_list}\n\n{'Expected *.cur, *.ani or install.inf inside the folder.'}",
+            heading=_("No cursor files found"),
+            body=f"{rejected_list}\n\n{_('Expected *.cur, *.ani or install.inf inside the folder.')}",
         )
-        dialog.add_response("ok", "OK")
+        dialog.add_response("ok", _("OK"))
         dialog.set_default_response("ok")
         dialog.present(self.window)
 
@@ -348,9 +348,7 @@ class FlexaApplication(Adw.Application):
     def _show_done_toast(self, results: list[ConversionResult]):
         done = sum(1 for r in results if r.status == ConversionStatus.DONE)
         total = len(results)
-        toast = Adw.Toast(
-            title=f"{done}/{total} cursor{'' if done <= 1 and total <= 1 else 's'} converted successfully!"
-        )
+        toast = Adw.Toast(title=_("Conversion completed") + f" ({done}/{total})")
         toast.set_button_label(_("Open"))
         toast.connect("button-clicked", self.on_open_output_dir)
         self.window.btn_convert.set_sensitive(True)

@@ -28,7 +28,7 @@
     "reveal": "always"
   },
   {
-    "label": "Run (sem reinstalar)",
+    "label": "Run (no reinstall)",
     "command": "flatpak-builder --run _build io.github.eucaue.flexa.json flexa",
     "cwd": "$ZED_WORKTREE_ROOT",
     "allow_concurrent_runs": false,
@@ -39,6 +39,12 @@
     "command": "journalctl --user -f -t flexa",
     "cwd": "$ZED_WORKTREE_ROOT",
     "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Run (PT_BR)",
+    "command": "flatpak-builder --run _build io.github.eucaue.flexa.json env LANGUAGE=pt_BR flexa",
+    "cwd": "$ZED_WORKTREE_ROOT",
     "reveal": "always"
   }
 ]
