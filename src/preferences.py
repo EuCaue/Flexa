@@ -18,8 +18,8 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
             path = folder.get_path()
             parsed_path = self._parse_home_folder(path)
             self.output_dir_row.set_text(parsed_path)
-        except Exception as e:
-            print(e)
+        except GLib.GError:
+            pass
 
     def _parse_home_folder(self, path) -> str:
         return path.replace(GLib.get_home_dir(), "~", 1)

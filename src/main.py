@@ -56,7 +56,7 @@ class FlexaApplication(Adw.Application):
         self._create_action("quit", lambda *_: self.quit(), ["<control>q"])
         self._create_action("about", self.on_about_action)
         self._create_action("preferences", self.on_preferences_action)
-        self._create_action("shortcuts", self.on_shortcuts_action)
+        self._create_action("shortcuts", self.on_shortcuts_action, ["<control>comma"])
         self.folder_rows: list[RowData] = []
         self.folder_dialog: Gtk.FileDialog = Gtk.FileDialog()
         self.empty_status_page: Adw.StatusPage = Adw.StatusPage(
@@ -139,7 +139,11 @@ class FlexaApplication(Adw.Application):
         )
 
     def on_select_folders(self, dialog, result, _):
-        folders_model = dialog.select_multiple_folders_finish(result)
+        try:
+            folders_model = dialog.select_multiple_folders_finish(result)
+        except GLib.GError:
+            return
+
         if folders_model is None:
             return
 
@@ -325,7 +329,8 @@ class FlexaApplication(Adw.Application):
 
     def _on_conversion_progress(self, result: ConversionResult):
         file = next(
-            (f for f in self.folder_rows if Path(f.folder_path) == result.folder_path), None
+            (f for f in self.folder_rows if Path(f.folder_path) == result.folder_path),
+            None,
         )
         if file is None:
             return
@@ -358,7 +363,10 @@ class FlexaApplication(Adw.Application):
         output_path = GLib.build_filenamev(raw_output_path)
         file = Gio.File.new_for_path(output_path)
         launcher = Gtk.FileLauncher.new(file)
-        launcher.launch(self.window, None, None)
+        try:
+            launcher.launch(self.window, None, None)
+        except GLib.GError:
+            pass
 
 
 def main(version):
