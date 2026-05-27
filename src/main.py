@@ -107,13 +107,20 @@ class FlexaApplication(Adw.Application):
         about = Adw.AboutDialog(
             application_name="Flexa",
             application_icon="io.github.eucaue.flexa",
-            developer_name="caue",
+            developer_name="EuCaue",
             version="0.1.0",
-            # Translators: Replace "translator-credits" with your name/username, and optionally an email or URL.
-            translator_credits=_("translator-credits"),
-            developers=["caue"],
-            copyright="© 2026 caue",
+            comments=_(
+                "A simple GNOME app to convert Windows cursor themes to Linux format."
+            ),
+            # TODO:
+            website="https://github.com/eucaue/",
+            issue_url="https://github.com/eucaue/flexa/issues",
+            translator_credits=_("EuCaue"),
+            developers=["EuCaue"],
+            copyright="© 2026 EuCaue",
         )
+        about.add_link(_("Donate"), "https://github.com/sponsors/eucaue")
+        about.add_link(_("Quick Lofi"), "https://github.com/eucaue/quick-lofi")
         about.present(self.props.active_window)
 
     def on_preferences_action(self, widget, _):

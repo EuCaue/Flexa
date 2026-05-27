@@ -24,7 +24,7 @@ msgstr "Conversor de Cursores do Windows"
 #: data/io.github.eucaue.flexa.desktop.in:5
 #: data/io.github.eucaue.flexa.metainfo.xml.in:10
 msgid "Convert Windows cursor themes to Linux format"
-msgstr "Converta temas de cursores do Windows para o formato Linux"
+msgstr "Converter temas de cursor do Windows para o formato Linux"
 
 #: data/io.github.eucaue.flexa.metainfo.xml.in:12
 msgid ""
@@ -32,10 +32,10 @@ msgid ""
 "cur and .ani files) to the Linux XCursor format. It provides a clean, "
 "intuitive interface following the GNOME Human Interface Guidelines."
 msgstr ""
-"O Flexa é um aplicativo GNOME simples que converte temas de cursores do "
-"Windows (arquivos .cur e .ani) para o formato XCursor do Linux. Ele fornece "
-"uma interface limpa e intuitiva seguindo as diretrizes de interface humana "
-"do GNOME."
+"O Flexa é um aplicativo GNOME simples para converter temas de cursor do "
+"Windows (arquivos .cur e .ani) para o formato XCursor do Linux. Ele tem "
+"uma interface limpa e intuitiva que segue as diretrizes de interface do "
+"GNOME."
 
 #: data/io.github.eucaue.flexa.metainfo.xml.in:18
 msgid ""
@@ -44,11 +44,10 @@ msgid ""
 "cursors and convert them all with a single click. When done, a toast "
 "notification lets you open the output directory instantly."
 msgstr ""
-"Adicione várias pastas de cursores de uma vez — seja pelo seletor de "
-"arquivos ou arrastando e soltando na janela. O Flexa verificará cada pasta "
-"em busca de cursores e converterá todos com um único clique. Quando "
-"terminar, uma notificação permite abrir o diretório de saída "
-"instantaneamente."
+"Adicione várias pastas de cursor de uma vez — pelo seletor de arquivos ou "
+"arrastando e soltando na janela. O Flexa varre cada pasta em busca de "
+"cursores e converte tudo com um clique. Quando termina, aparece uma "
+"notificação para abrir a pasta de saída na hora."
 
 #: data/io.github.eucaue.flexa.metainfo.xml.in:25
 msgid ""
@@ -56,13 +55,13 @@ msgid ""
 "local/share/icons, so converted themes are immediately available in GNOME "
 "Settings → Appearance."
 msgstr ""
-"O diretório de saída é configurável nas Preferências e o padrão é ~/."
-"local/share/icons, para que os temas convertidos fiquem imediatamente "
-"disponíveis em Configurações do GNOME → Aparência."
+"Dá pra configurar a pasta de saída nas Preferências — o padrão é ~/."
+"local/share/icons, assim os temas convertidos já ficam disponíveis em "
+"Configurações do GNOME → Aparência."
 
 #: data/io.github.eucaue.flexa.metainfo.xml.in:57
 msgid "Main window with cursor folders added"
-msgstr "Janela principal com pastas de cursores adicionadas"
+msgstr "Janela principal com pastas de cursor adicionadas"
 
 #: src/main.py:63
 msgid "No Folders Added"
@@ -70,7 +69,7 @@ msgstr "Nenhuma Pasta Adicionada"
 
 #: src/main.py:64
 msgid "Drag folders here or click the button below"
-msgstr "Arraste pastas aqui ou clique no botão abaixo"
+msgstr "Arraste pastas aqui ou clique no botão embaixo"
 
 #. Translators: Replace "translator-credits" with your name/username, and optionally an email or URL.
 #: src/main.py:113
@@ -79,15 +78,15 @@ msgstr "caue <caue@fedora>"
 
 #: src/main.py:128
 msgid "Select cursor folders"
-msgstr "Selecionar pastas de cursores"
+msgstr "Selecionar pastas de cursor"
 
 #: src/main.py:211
 msgid "No cursor files found"
-msgstr "Nenhum arquivo de cursor encontrado"
+msgstr "Nenhum cursor encontrado"
 
 #: src/main.py:212
 msgid "Expected *.cur, *.ani or install.inf inside the folder."
-msgstr "Esperado *.cur, *.ani ou install.inf dentro da pasta."
+msgstr "Só aceitamos arquivos *.cur, *.ani ou install.inf dentro da pasta."
 
 #: src/main.py:215
 msgid "OK"
@@ -111,7 +110,7 @@ msgstr "Converter"
 
 #: src/window.ui:21
 msgid "Add cursor folder"
-msgstr "Adicionar pasta de cursores"
+msgstr "Adicionar pasta de cursor"
 
 #: src/window.ui:35
 msgid "Main Menu"
@@ -166,3 +165,19 @@ msgstr "Mostrar Atalhos"
 msgctxt "shortcut window"
 msgid "Quit"
 msgstr "Sair"
+
+#: data/io.github.eucaue.flexa.gschema.xml:7
+msgid "Directory where converted cursors are saved."
+msgstr "Diretório onde os cursores convertidos são salvos."
+
+#: src/main.py:115
+msgid "A simple GNOME app to convert Windows cursor themes to Linux format."
+msgstr "Um aplicativo GNOME simples para converter temas de cursor do Windows para o formato Linux."
+
+#: src/main.py:125
+msgid "Donate"
+msgstr "Doar"
+
+#: src/main.py:126
+msgid "Quick Lofi"
+msgstr "Quick Lofi"
