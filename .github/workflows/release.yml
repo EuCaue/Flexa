@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  flatpak:
+    name: Flatpak
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub/flatpak-github-actions:gnome-50
+      options: --privileged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: flexa.flatpak
+          manifest-path: io.github.eucaue.flexa.json
+          cache-key: flatpak-${{ github.sha }}
+
+      - name: Upload Flatpak artifact
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: flexa-flatpak
+          path: flexa.flatpak
+
+  rpm:
+    name: RPM
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:43
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          dnf install -y rpm-build meson ninja-build gettext desktop-file-utils \
+            libappstream-glib python3-devel gtk4-devel libadwaita-devel \
+            gobject-introspection-devel glib2-devel python3-gobject \
+          python3-numpy python3-wand ImageMagick python3-setuptools \
+          pyproject-rpm-macros python3-pip python3-wheel git curl nodejs \
+          python3-build python-installer python3-packaging rpmlint
+      - name: Build python-win2xcur RPM
+        run: |
+          mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          WIN2XCUR_VER=$(rpmspec -q --queryformat='%{version}' packaging/rpm/python-win2xcur.spec)
+          curl -L -o "/root/rpmbuild/SOURCES/win2xcur-${WIN2XCUR_VER}.tar.gz" \
+            "https://github.com/quantum5/win2xcur/archive/v${WIN2XCUR_VER}/win2xcur-${WIN2XCUR_VER}.tar.gz"
+          cp packaging/rpm/python-win2xcur.spec /root/rpmbuild/SPECS/
+          rpmlint packaging/rpm/python-win2xcur.spec || true
+          rpmbuild -ba /root/rpmbuild/SPECS/python-win2xcur.spec
+      - name: Install python-win2xcur RPM
+        run: |
+          dnf install -y /root/rpmbuild/RPMS/noarch/python3-win2xcur-*.rpm
+
+      - name: Build flexa RPM
+        run: |
+          VERSION=$(rpmspec -q --queryformat='%{version}' packaging/rpm/flexa.spec)
+          git archive --format=tar.gz -o "/root/rpmbuild/SOURCES/flexa-${VERSION}.tar.gz" \
+            --prefix="flexa-${VERSION}/" HEAD
+          cp packaging/rpm/flexa.spec /root/rpmbuild/SPECS/
+          rpmlint packaging/rpm/flexa.spec || true
+          rpmbuild -ba /root/rpmbuild/SPECS/flexa.spec
+
+      - name: Copy RPMs to workspace (local testing)
+        if: ${{ env.ACT }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          find /root/rpmbuild/RPMS -name "*.rpm" -exec cp -v {} "$GITHUB_WORKSPACE/dist/" \;
+          find /root/rpmbuild/SRPMS -name "*.rpm" -exec cp -v {} "$GITHUB_WORKSPACE/dist/" \; || true
+
+          cd "$GITHUB_WORKSPACE/dist"
+          FLEXA_RPM=$(find . -maxdepth 1 -name "flexa-*.rpm" ! -name "*src*" | head -1)
+          if [ -n "$FLEXA_RPM" ]; then
+            rm -rf usr/
+            rpm2cpio "$FLEXA_RPM" | cpio -idm 2>/dev/null
+
+            # Compile GLib schemas
+            if [ -d usr/share/glib-2.0/schemas ]; then
+              glib-compile-schemas usr/share/glib-2.0/schemas/
+            fi
+
+            # Patch launcher paths for local execution
+            LAUNCHER=usr/bin/flexa
+            DIST="$GITHUB_WORKSPACE/dist"
+            sed -i "1s|#!.*|#!/usr/bin/python3|" "$LAUNCHER"
+            sed -i "s|^pkgdatadir = '.*'|pkgdatadir = '${DIST}/usr/share/flexa'|" "$LAUNCHER"
+            sed -i "s|^localedir = '.*'|localedir = '${DIST}/usr/share/locale'|" "$LAUNCHER"
+            sed -i "s|^import os|import os\nos.environ['GSETTINGS_SCHEMA_DIR'] = '${DIST}/usr/share/glib-2.0/schemas'|" "$LAUNCHER"
+
+            echo ""
+            echo "RPM READY: $DIST/usr/bin/flexa"
+          fi
+      - name: Upload RPM artifacts
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: flexa-rpm
+          path: |
+            /root/rpmbuild/RPMS/**/*.rpm
+            /root/rpmbuild/SRPMS/*.rpm
+
+  release:
+    name: Create Release
+    needs: [flatpak, rpm]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download Flatpak artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flexa-flatpak
+
+      - name: Download RPM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: flexa-rpm
+
+      - name: Generate Release Notes with Checksums
+        run: |
+          cat << 'EOF' > release_body.md
+          ## Flexa ${{ github.ref_name }}
+
+          ### Installation
+
+          **Flatpak** — Download `flexa.flatpak` below and install:
+
+          ```sh
+          flatpak install --user flexa.flatpak
+          ```
+
+          **RPM** — Download the RPM files below and install:
+
+          ```sh
+          sudo dnf install ./python3-win2xcur-*.rpm ./flexa-*.rpm
+          ```
+
+          **Flathub** — Coming soon.
+
+          ### SHA256 Checksums
+
+          | File | SHA256 Checksum |
+          |------|-----------------|
+          EOF
+
+          for f in flexa.flatpak *.rpm; do
+            if [ -f "$f" ]; then
+              sha=$(sha256sum "$f" | cut -d' ' -f1)
+              echo "| \`$f\` | \`$sha\` |" >> release_body.md
+            fi
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Flexa ${{ github.ref_name }}
+          draft: true
+          prerelease: true
+          generate_release_notes: true
+          body_path: release_body.md
+          files: |
+            flexa.flatpak
+            *.rpm
