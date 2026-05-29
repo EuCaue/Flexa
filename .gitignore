@@ -1,5 +1,6 @@
 # Meson / Flatpak build output
 /_build/
+/_native/
 /build/
 /.flatpak-builder/
 /.flatpak/
