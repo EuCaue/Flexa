@@ -46,5 +46,12 @@
     "command": "flatpak-builder --run _build io.github.eucaue.flexa.json env LANGUAGE=pt_BR flexa",
     "cwd": "$ZED_WORKTREE_ROOT",
     "reveal": "always"
+  },
+  {
+    "label": "Native Build & Run",
+    "command": "meson setup build --prefix=$ZED_WORKTREE_ROOT/_native --reconfigure 2>/dev/null || meson setup build --prefix=$ZED_WORKTREE_ROOT/_native && meson compile -C build && meson install -C build && GSETTINGS_SCHEMA_DIR=$ZED_WORKTREE_ROOT/_native/share/glib-2.0/schemas $ZED_WORKTREE_ROOT/_native/bin/flexa",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
   }
 ]
