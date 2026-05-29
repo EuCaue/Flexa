@@ -35,6 +35,8 @@ A simple GNOME app to convert Windows cursor themes to Linux format.
 - LibAdwaita 1.5+
 - PyGObject
 - Python 3.11+
+- [win2xcur](https://github.com/quantum5/win2xcur) (converts `.cur`/`.ani` to XCursor)
+- ImageMagick (needed by win2xcur)
 
 ## Installation
 
@@ -63,18 +65,28 @@ flatpak-builder --user --install --force-clean _build io.github.eucaue.flexa.jso
 flatpak run io.github.eucaue.flexa
 ```
 
+The Flatpak calls `win2xcur` on the host via `flatpak-spawn`, so you still need it installed (`pip install win2xcur` or `pipx install win2xcur`).
+
 ### Building from source
 
 Make sure you have the dependencies installed:
 
 ```sh
 # Fedora
-sudo dnf install gtk4-devel libadwaita-devel gobject-introspection-devel meson ninja-build gettext python3-gobject
+sudo dnf install gtk4-devel libadwaita-devel gobject-introspection-devel meson ninja-build gettext python3-gobject ImageMagick-devel
 ```
 
 ```sh
 # Ubuntu / Debian
-sudo apt install libgtk-4-dev libadwaita-1-dev libgirepository1.0-dev meson ninja-build gettext python3-gi
+sudo apt install libgtk-4-dev libadwaita-1-dev libgirepository1.0-dev meson ninja-build gettext python3-gi libglib2.0-bin libmagickwand-dev
+```
+
+Install `win2xcur`:
+
+```sh
+pip install win2xcur
+# or
+pipx install win2xcur
 ```
 
 Then build:
