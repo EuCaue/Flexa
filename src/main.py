@@ -27,9 +27,8 @@ gi.require_version("Adw", "1")
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict
 
-from gi.repository import Adw, Gdk, Gio, GLib, Gtk, Pango
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 from .cursor_converter import ConversionResult, ConversionStatus, CursorConverter
 from .preferences import FlexaPreferencesDialog
@@ -109,9 +108,7 @@ class FlexaApplication(Adw.Application):
             application_icon="io.github.eucaue.flexa",
             developer_name="EuCaue",
             version="0.1.0",
-            comments=_(
-                "A simple GNOME app to convert Windows cursor themes to Linux format."
-            ),
+            comments=_("A simple GNOME app to convert Windows cursor themes to Linux format."),
             # TODO:
             website="https://github.com/eucaue/",
             issue_url="https://github.com/eucaue/flexa/issues",
@@ -131,9 +128,7 @@ class FlexaApplication(Adw.Application):
 
     def on_shortcuts_action(self, widget, _):
         print("app shortcuts called...")
-        builder = Gtk.Builder.new_from_resource(
-            "/io/github/eucaue/flexa/shortcuts-dialog.ui"
-        )
+        builder = Gtk.Builder.new_from_resource("/io/github/eucaue/flexa/shortcuts-dialog.ui")
         dialog = builder.get_object("shortcuts_dialog")
         dialog.present(self.props.active_window)
 
@@ -141,9 +136,7 @@ class FlexaApplication(Adw.Application):
         """Callback for the app.add_files action."""
         print("Opened dialog")
         self.folder_dialog.set_title(_("Select cursor folders"))
-        self.folder_dialog.select_multiple_folders(
-            self.window, None, self.on_select_folders, None
-        )
+        self.folder_dialog.select_multiple_folders(self.window, None, self.on_select_folders, None)
 
     def on_select_folders(self, dialog, result, _):
         try:
@@ -216,7 +209,8 @@ class FlexaApplication(Adw.Application):
 
         dialog = Adw.AlertDialog(
             heading=_("No cursor files found"),
-            body=f"{rejected_list}\n\n{_('Expected *.cur, *.ani or install.inf inside the folder.')}",
+            body=f"{rejected_list}\n\n"
+            f"{_('Expected *.cur, *.ani or install.inf inside the folder.')}",
         )
         dialog.add_response("ok", _("OK"))
         dialog.set_default_response("ok")
@@ -283,9 +277,7 @@ class FlexaApplication(Adw.Application):
         drop_target.connect("leave", self.on_drop_leave)
         self.window.cursor_list.add_controller(drop_target)
 
-    def on_drop_folders(
-        self, target: Gtk.DropTarget, value: Gdk.FileList, x: int, y: int
-    ):
+    def on_drop_folders(self, target: Gtk.DropTarget, value: Gdk.FileList, x: int, y: int):
         folders = [
             (
                 f.get_path(),
@@ -294,9 +286,7 @@ class FlexaApplication(Adw.Application):
                 ).get_display_name(),
             )
             for f in value.get_files()
-            if f.query_info(
-                "standard::type", Gio.FileQueryInfoFlags.NONE, None
-            ).get_file_type()
+            if f.query_info("standard::type", Gio.FileQueryInfoFlags.NONE, None).get_file_type()
             == Gio.FileType.DIRECTORY
         ]
 

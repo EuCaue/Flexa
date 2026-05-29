@@ -1,9 +1,0 @@
-{
-  "venvPath": ".",
-  "venv": ".venv",
-  "extraPaths": [
-    ".venv/lib/python3.13/site-packages"
-  ],
-  "reportMissingModuleSource": "none",
-  "reportMissingImports": "none"
-}

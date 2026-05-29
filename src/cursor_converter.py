@@ -161,13 +161,9 @@ class CursorConverter:
     win2xcur_bin: str = "win2xcur"
 
     # Shared Cancellable among all session subprocesses
-    _cancellable: Gio.Cancellable = field(
-        default_factory=Gio.Cancellable, init=False, repr=False
-    )
+    _cancellable: Gio.Cancellable = field(default_factory=Gio.Cancellable, init=False, repr=False)
     _folders: list[Path] = field(default_factory=list, init=False, repr=False)
-    _results: list[ConversionResult] = field(
-        default_factory=list, init=False, repr=False
-    )
+    _results: list[ConversionResult] = field(default_factory=list, init=False, repr=False)
     _skipped: set[Path] = field(default_factory=set, init=False, repr=False)
 
     def add(self, folder: Path) -> None:
@@ -336,17 +332,13 @@ class CursorConverter:
 
                 if not ok or proc.get_exit_status() != 0:
                     stderr = (
-                        stderr_bytes.get_data().decode(errors="replace")
-                        if stderr_bytes
-                        else ""
+                        stderr_bytes.get_data().decode(errors="replace") if stderr_bytes else ""
                     )
                     raise RuntimeError(f"win2xcur failed for {src_file.name}: {stderr}")
 
                 generated = Path(temp_dir) / src_file.stem
                 if not generated.exists():
-                    raise FileNotFoundError(
-                        f"win2xcur did not produce output for {src_file.name}"
-                    )
+                    raise FileNotFoundError(f"win2xcur did not produce output for {src_file.name}")
 
                 shutil.move(str(generated), str(out_file))
 
@@ -371,7 +363,7 @@ class CursorConverter:
             return [candidate]
 
         raise FileNotFoundError(
-            f"win2xcur not found. Checked:\n" + "\n".join(self._candidate_paths())
+            "win2xcur not found. Checked:\n" + "\n".join(self._candidate_paths())
         )
 
     def _is_inside_flatpak(self) -> bool:
@@ -379,11 +371,7 @@ class CursorConverter:
 
     def _is_host_path(self, path: Path) -> bool:
         s = str(path)
-        return (
-            path.is_absolute()
-            and not s.startswith("/app/")
-            and not s.startswith("/usr/")
-        )
+        return path.is_absolute() and not s.startswith("/app/") and not s.startswith("/usr/")
 
     def _candidate_paths(self) -> list[str]:
         path_dirs = [e for e in os.environ.get("PATH", "").split(":") if e]
@@ -460,7 +448,9 @@ class CursorConverter:
 
     def _write_index_theme(self, out_theme: Path, name: str) -> None:
         (out_theme / "index.theme").write_text(
-            f"[Icon Theme]\nName={name}\nComment={name} (converted from Windows)\nInherits=hicolor\n",
+            f"[Icon Theme]\nName={name}\n"
+            f"Comment={name} (converted from Windows)\n"
+            "Inherits=hicolor\n",
             encoding="utf-8",
         )
 
