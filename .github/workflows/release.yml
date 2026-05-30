@@ -20,7 +20,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y flatpak flatpak-builder xvfb
-          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
@@ -52,6 +52,7 @@ jobs:
           python3-numpy python3-wand ImageMagick python3-setuptools \
           pyproject-rpm-macros python3-pip python3-wheel git curl nodejs \
           python3-build python-installer python3-packaging rpmlint
+          git config --global --add safe.directory "$PWD"
       - name: Build python-win2xcur RPM
         run: |
           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
@@ -66,7 +67,6 @@ jobs:
           dnf install -y ~/rpmbuild/RPMS/noarch/python3-win2xcur-*.rpm
       - name: Build flexa RPM
         run: |
-          git config --global --add safe.directory "$PWD"
           VERSION=$(rpmspec -q --queryformat='%{version}' packaging/rpm/flexa.spec)
           git archive --format=tar.gz -o "$HOME/rpmbuild/SOURCES/flexa-${VERSION}.tar.gz" \
             --prefix="flexa-${VERSION}/" HEAD
