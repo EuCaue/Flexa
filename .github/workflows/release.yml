@@ -13,6 +13,9 @@ jobs:
   flatpak:
     name: Flatpak
     runs-on: ubuntu-latest
+    container:
+      image: fedora:43
+      options: --privileged
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,13 +23,14 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y flatpak flatpak-builder xvfb
-          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: flexa.flatpak
           manifest-path: io.github.eucaue.flexa.json
           cache-key: flatpak-${{ github.sha }}
+          branch: master
       - name: Upload Flatpak artifact
         if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4
