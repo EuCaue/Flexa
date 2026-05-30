@@ -116,6 +116,13 @@ Each theme gets its own subfolder (named after the original folder). Apply the t
 
 Issues and pull requests are welcome at [github.com/eucaue/flexa](https://github.com/eucaue/flexa/issues).
 
+## Acknowledgements
+
+Flexa is built on top of and inspired by these projects:
+
+- **[win2xcur](https://github.com/quantum5/win2xcur)**: The core engine used to convert Windows cursors.
+- **[win-cursor-2-linux](https://github.com/lmezar/win-cursor-2-linux)**: The original script that inspired the idea
+
 ## License
 
 GPL-3.0-or-later
