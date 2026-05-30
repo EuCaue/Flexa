@@ -1,6 +1,6 @@
 [project]
 name = "flexa"
-version = "0.1.0"
+version = "1.0.0"
 description = "A simple GNOME app to convert Windows cursor themes to Linux format."
 readme = "README.md"
 requires-python = ">=3.11"

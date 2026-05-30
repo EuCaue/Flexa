@@ -3,7 +3,7 @@
 <div align="center">
 
 ![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![GTK](https://img.shields.io/badge/GTK-4.10+-blue)
 ![LibAdwaita](https://img.shields.io/badge/LibAdwaita-1.5+-blue)

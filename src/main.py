@@ -107,7 +107,7 @@ class FlexaApplication(Adw.Application):
             application_name="Flexa",
             application_icon="io.github.eucaue.flexa",
             developer_name="EuCaue",
-            version="0.1.0",
+            version="1.0.0",
             comments=_("A simple GNOME app to convert Windows cursor themes to Linux format."),
             # TODO:
             website="https://github.com/eucaue/",
