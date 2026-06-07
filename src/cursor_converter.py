@@ -172,6 +172,14 @@ class CursorConverter:
     def add_many(self, folders: list[Path]) -> None:
         self._folders.extend(folders)
 
+    def is_win2xcur_available(self) -> bool:
+        """Returns True if the win2xcur binary can be located on the system."""
+        try:
+            self._resolve_win2xcur_command()
+            return True
+        except FileNotFoundError:
+            return False
+
     def start(self) -> None:
         """Starts the conversion. Non-blocking — returns immediately."""
         self._cancellable.reset()

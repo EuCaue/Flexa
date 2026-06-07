@@ -313,16 +313,50 @@ class FlexaApplication(Adw.Application):
 
     def on_convert_files(self, _):
         print(f"converting files: {self.folder_rows}")
+
+        # Check win2xcur before touching the UI state
+        probe = CursorConverter(
+            output_dir=Path("~").expanduser(),  # dummy, not used for the check
+            on_progress=lambda _: None,
+            on_all_done=lambda _: None,
+        )
+        if not probe.is_win2xcur_available():
+            self._show_win2xcur_missing_dialog()
+            return
+
         self.window.btn_convert.set_sensitive(False)
         self.window.btn_add.set_sensitive(False)
         self.window.btn_convert.set_child(Gtk.Spinner(spinning=True))
         self.converter = CursorConverter(
             output_dir=Path(self.settings.get_string("output-dir")).expanduser(),
             on_progress=self._on_conversion_progress,
-            on_all_done=self._show_done_toast,  # same as above
+            on_all_done=self._show_done_toast,
         )
         self.converter.add_many([Path(f.folder_path) for f in self.folder_rows])
         self.converter.start()
+
+    def _show_win2xcur_missing_dialog(self):
+        dialog = Adw.AlertDialog(
+            heading=_("win2xcur Not Found"),
+            body=_(
+                "Flexa requires <b>win2xcur</b> to convert cursor files, "
+                "but it could not be found on your system.\n\n"
+                "Install it with:\n"
+                "<tt>pip install win2xcur</tt>"
+            ),
+        )
+        dialog.set_body_use_markup(True)
+        dialog.add_response("close", _("Close"))
+        dialog.add_response("docs", _("Open win2xcur page"))
+        dialog.set_response_appearance("docs", Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_default_response("close")
+        dialog.connect("response", self._on_win2xcur_dialog_response)
+        dialog.present(self.window)
+
+    def _on_win2xcur_dialog_response(self, dialog, response_id):
+        if response_id == "docs":
+            launcher = Gtk.UriLauncher.new("https://github.com/quantum5/win2xcur")
+            launcher.launch(self.window, None, None)
 
     def _on_conversion_progress(self, result: ConversionResult):
         file = next(
