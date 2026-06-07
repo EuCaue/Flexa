@@ -1,7 +1,5 @@
-# Flexa
-
 <div align="center">
-
+<h1>Flexa</h1>
 <a href="https://github.com/eucaue/flexa">
   <img src="https://img.shields.io/badge/Flathub-coming%20soon-yellow" alt="Flathub"/> 
 </a>
@@ -20,15 +18,13 @@
 <a href="#">
   <img src="https://img.shields.io/badge/LibAdwaita-1.5+-blue" alt="LibAdwaita" />
 </a>
-
-A simple GNOME app to convert Windows cursor themes to Linux format.
+<br><br>
+<p>A simple GNOME app to convert Windows cursor themes to Linux format.</p>
 
 </div>
 
 <div align="center">
-
-![Screenshot](./flexa.png)
-
+<img alt="Flexa App" src="./flexa.png" style="max-width: 100%; height: auto;" />
 </div>
 
 ## Features
