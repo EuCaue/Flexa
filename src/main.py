@@ -265,8 +265,9 @@ class FlexaApplication(Adw.Application):
     def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData):
         self.window.cursor_list.remove(row)
         self.folder_rows.remove(row_data)
-        self.window.btn_convert.set_sensitive(len(self.folder_rows) > 0)
-        if self.converter is not None and self.converter.is_running:
+        is_converting = self.converter is not None and self.converter.is_running
+        self.window.btn_convert.set_sensitive(len(self.folder_rows) > 0 and not is_converting)
+        if is_converting:
             self.converter.remove(Path(row_data.folder_path))
             if len(self.folder_rows) == 0:
                 self.converter.cancel()
