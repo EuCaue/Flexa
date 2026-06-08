@@ -266,8 +266,10 @@ class FlexaApplication(Adw.Application):
         self.window.cursor_list.remove(row)
         self.folder_rows.remove(row_data)
         self.window.btn_convert.set_sensitive(len(self.folder_rows) > 0)
-        if self.converter is not None:
+        if self.converter is not None and self.converter.is_running:
             self.converter.remove(Path(row_data.folder_path))
+            if len(self.folder_rows) == 0:
+                self.converter.cancel()
         return True
 
     def setup_drop_target(self):
@@ -377,15 +379,17 @@ class FlexaApplication(Adw.Application):
                 file.stack.set_visible_child_name("error")
 
     def _show_done_toast(self, results: list[ConversionResult]):
-        done = sum(1 for r in results if r.status == ConversionStatus.DONE)
-        total = len(results)
-        toast = Adw.Toast(title=_("Conversion completed") + f" ({done}/{total})")
-        toast.set_button_label(_("Open"))
-        toast.connect("button-clicked", self.on_open_output_dir)
-        self.window.btn_convert.set_sensitive(True)
+        self.window.btn_convert.set_sensitive(len(self.folder_rows) > 0)
         self.window.btn_convert.set_label(_("Convert"))
         self.window.btn_add.set_sensitive(True)
-        self.window.toast_overlay.add_toast(toast)
+
+        if len(self.folder_rows) > 0 and results:
+            done = sum(1 for r in results if r.status == ConversionStatus.DONE)
+            total = len(results)
+            toast = Adw.Toast(title=_("Conversion completed") + f" ({done}/{total})")
+            toast.set_button_label(_("Open"))
+            toast.connect("button-clicked", self.on_open_output_dir)
+            self.window.toast_overlay.add_toast(toast)
 
     def on_open_output_dir(self, _toast):
         raw_output_path = self.converter.output_dir.parts

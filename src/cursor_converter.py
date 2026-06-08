@@ -165,6 +165,12 @@ class CursorConverter:
     _folders: list[Path] = field(default_factory=list, init=False, repr=False)
     _results: list[ConversionResult] = field(default_factory=list, init=False, repr=False)
     _skipped: set[Path] = field(default_factory=set, init=False, repr=False)
+    _cancellables: dict[Path, Gio.Cancellable] = field(default_factory=dict, init=False, repr=False)
+    _is_running: bool = field(default=False, init=False, repr=False)
+
+    @property
+    def is_running(self) -> bool:
+        return self._is_running
 
     def add(self, folder: Path) -> None:
         self._folders.append(folder)
@@ -182,18 +188,25 @@ class CursorConverter:
 
     def start(self) -> None:
         """Starts the conversion. Non-blocking — returns immediately."""
+        self._is_running = True
         self._cancellable.reset()
         self._results.clear()
         self._skipped.clear()
+        self._cancellables.clear()
         self._process_next(0)
 
     def cancel(self) -> None:
         """Cancels the ongoing conversion, including subprocesses."""
         self._cancellable.cancel()
+        for cancellable in self._cancellables.values():
+            cancellable.cancel()
 
     def remove(self, folder: Path) -> None:
         """Removes a folder from the conversion queue."""
         self._skipped.add(folder)
+        cancellable = self._cancellables.get(folder)
+        if cancellable:
+            cancellable.cancel()
 
     def _process_next(self, index: int) -> None:
         """
@@ -201,10 +214,12 @@ class CursorConverter:
         When it finishes, the callback schedules the next one — asynchronous recursion.
         """
         if index >= len(self._folders):
+            self._is_running = False
             self.on_all_done(list(self._results))
             return
 
         if self._cancellable.is_cancelled():
+            self._is_running = False
             self.on_all_done(list(self._results))
             return
 
@@ -224,9 +239,16 @@ class CursorConverter:
             )
         )
 
+        folder_cancellable = Gio.Cancellable.new()
+        self._cancellables[folder] = folder_cancellable
+
+        # If the session cancellable is already cancelled, cancel this one too
+        if self._cancellable.is_cancelled():
+            folder_cancellable.cancel()
+
         task = Gio.Task.new(
             None,  # source_object (no owner GObject)
-            self._cancellable,  # propagated cancellable
+            folder_cancellable,  # propagated cancellable
             self._on_task_done,  # callback on the main loop
             index,  # task_data passed to the callback
         )
@@ -243,6 +265,9 @@ class CursorConverter:
         Called automatically on the main loop by GLib when the task finishes.
         Does not need GLib.idle_add — Gio.Task already ensures this.
         """
+        folder = self._folders[index]
+        self._cancellables.pop(folder, None)
+
         try:
             # task.propagate_value() raises GLib.Error if there was an error or cancellation
             ok, result = task.propagate_value()
@@ -251,9 +276,10 @@ class CursorConverter:
                 self.on_progress(result)
         except GLib.Error as err:
             if self._cancellable.is_cancelled():
+                self._is_running = False
                 canceled = ConversionResult(
-                    folder_name=self._folders[index].name,
-                    folder_path=self._folders[index],
+                    folder_name=folder.name,
+                    folder_path=folder,
                     output_path=None,
                     status=ConversionStatus.CANCELED,
                 )
@@ -261,10 +287,20 @@ class CursorConverter:
                 self.on_progress(canceled)
                 self.on_all_done(list(self._results))
                 return
+
+            cancellable = task.get_cancellable()
+            if cancellable and cancellable.is_cancelled():
+                canceled = ConversionResult(
+                    folder_name=folder.name,
+                    folder_path=folder,
+                    output_path=None,
+                    status=ConversionStatus.CANCELED,
+                )
+                self.on_progress(canceled)
             else:
                 error_result = ConversionResult(
-                    folder_name=self._folders[index].name,
-                    folder_path=self._folders[index],
+                    folder_name=folder.name,
+                    folder_path=folder,
                     output_path=None,
                     status=ConversionStatus.ERROR,
                     error=err.message,
@@ -283,15 +319,16 @@ class CursorConverter:
         theme_name = folder.name
         out_theme = self.output_dir / theme_name
         cursors_dir = out_theme / "cursors"
+        cancellable = task.get_cancellable()
 
         try:
-            if self._cancellable.is_cancelled():
+            if cancellable and cancellable.is_cancelled():
                 task.return_error(GLib.Error("Cancelled"))
                 return
 
             cursors_dir.mkdir(parents=True, exist_ok=True)
             mapping = self._build_mapping(folder)
-            self._run_win2xcur_sync(folder, cursors_dir, mapping)
+            self._run_win2xcur_sync(folder, cursors_dir, mapping, cancellable)
             self._write_index_theme(out_theme, theme_name)
 
             result = ConversionResult(
@@ -303,14 +340,18 @@ class CursorConverter:
             task.return_value(result)
 
         except Exception as exc:
-            self._write_error_log(out_theme, exc)
-            task.return_error(GLib.Error(str(exc)))
+            if cancellable and cancellable.is_cancelled():
+                task.return_error(GLib.Error("Cancelled"))
+            else:
+                self._write_error_log(out_theme, exc)
+                task.return_error(GLib.Error(str(exc)))
 
     def _run_win2xcur_sync(
         self,
         source_dir: Path,
         cursors_dir: Path,
         mapping: dict[str, list[str]],
+        cancellable: Gio.Cancellable | None,
     ) -> None:
         """
         Calls win2xcur for each file via Gio.Subprocess.
@@ -320,7 +361,7 @@ class CursorConverter:
         win2xcur_cmd = self._resolve_win2xcur_command()
 
         for win_filename, linux_names in mapping.items():
-            if self._cancellable.is_cancelled():
+            if cancellable and cancellable.is_cancelled():
                 return
 
             src_file = source_dir / win_filename
@@ -336,7 +377,7 @@ class CursorConverter:
                 )
                 proc = launcher.spawnv([*win2xcur_cmd, str(src_file), "-o", temp_dir])
 
-                ok, _stdout, stderr_bytes = proc.communicate(None, self._cancellable)
+                ok, _stdout, stderr_bytes = proc.communicate(None, cancellable)
 
                 if not ok or proc.get_exit_status() != 0:
                     stderr = (
