@@ -385,9 +385,21 @@ class FlexaApplication(Adw.Application):
         self.window.btn_add.set_sensitive(True)
 
         if len(self.folder_rows) > 0 and results:
-            done = sum(1 for r in results if r.status == ConversionStatus.DONE)
-            total = len(results)
-            toast = Adw.Toast(title=_("Conversion completed") + f" ({done}/{total})")
+            done: int = sum(1 for r in results if r.status == ConversionStatus.DONE)
+            failed: int = sum(1 for r in results if r.status == ConversionStatus.ERROR)
+            total: int = len(results)
+            plural: str = "s" if total > 1 else ""
+
+            if failed == 0:
+                title = _("Converted {done} of {total} cursor theme{plural}").format(
+                    done=done, total=total, plural=plural
+                )
+            else:
+                title = _("Converted {done} of {total} cursor theme{plural}; {failed} failed").format(
+                    done=done, failed=failed, total=total, plural=plural
+                )
+
+            toast = Adw.Toast(title=title)
             toast.set_button_label(_("Open"))
             toast.connect("button-clicked", self.on_open_output_dir)
             self.window.toast_overlay.add_toast(toast)

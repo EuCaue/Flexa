@@ -53,3 +53,11 @@ msgstr ""
 #: src/main.py:357
 msgid "Convert"
 msgstr ""
+
+#: src/main.py:394
+msgid "Converted {done} of {total} cursor theme{plural}"
+msgstr ""
+
+#: src/main.py:398
+msgid "Converted {done} of {total} cursor theme{plural}; {failed} failed"
+msgstr ""

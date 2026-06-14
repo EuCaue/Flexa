@@ -108,6 +108,14 @@ msgstr "Abrir"
 msgid "Convert"
 msgstr "Converter"
 
+#: src/main.py:387
+msgid "Converted {done} of {total} cursor theme{plural}"
+msgstr "Convertido {done} de {total} tema{plural} de cursor"
+
+#: src/main.py:389
+msgid "Converted {done} of {total} cursor theme{plural}; {failed} failed"
+msgstr "Convertido {done} de {total} tema{plural} de cursor; {failed} falhou"
+
 #: src/window.ui:21
 msgid "Add cursor folder"
 msgstr "Adicionar pasta de cursor"
