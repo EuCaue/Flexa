@@ -1,55 +1,69 @@
 [
   {
     "label": "Build",
-    "command": "flatpak-builder --user --force-clean _build io.github.eucaue.flexa.json",
+    "command": "just build",
     "cwd": "$ZED_WORKTREE_ROOT",
     "allow_concurrent_runs": false,
     "reveal": "always"
   },
   {
     "label": "Build & Install",
-    "command": "flatpak-builder --user --install --force-clean _build io.github.eucaue.flexa.json",
+    "command": "just install",
     "cwd": "$ZED_WORKTREE_ROOT",
     "allow_concurrent_runs": false,
     "reveal": "always"
   },
   {
     "label": "Run",
-    "command": "flatpak run io.github.eucaue.flexa",
+    "command": "just run",
     "cwd": "$ZED_WORKTREE_ROOT",
     "allow_concurrent_runs": false,
     "reveal": "always"
   },
   {
     "label": "Build & Run",
-    "command": "flatpak-builder --user --install --force-clean _build io.github.eucaue.flexa.json && flatpak run io.github.eucaue.flexa",
+    "command": "just build-run",
     "cwd": "$ZED_WORKTREE_ROOT",
     "allow_concurrent_runs": false,
     "reveal": "always"
   },
   {
     "label": "Run (no reinstall)",
-    "command": "flatpak-builder --run _build io.github.eucaue.flexa.json flexa",
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "allow_concurrent_runs": false,
-    "reveal": "always"
-  },
-  {
-    "label": "Logs",
-    "command": "journalctl --user -f -t flexa",
+    "command": "just run-fast",
     "cwd": "$ZED_WORKTREE_ROOT",
     "allow_concurrent_runs": false,
     "reveal": "always"
   },
   {
     "label": "Run (PT_BR)",
-    "command": "flatpak-builder --run _build io.github.eucaue.flexa.json env LANGUAGE=pt_BR flexa",
+    "command": "just run-fast-pt",
     "cwd": "$ZED_WORKTREE_ROOT",
     "reveal": "always"
   },
   {
     "label": "Native Build & Run",
-    "command": "meson setup build --prefix=$ZED_WORKTREE_ROOT/_native --reconfigure 2>/dev/null || meson setup build --prefix=$ZED_WORKTREE_ROOT/_native && meson compile -C build && meson install -C build && GSETTINGS_SCHEMA_DIR=$ZED_WORKTREE_ROOT/_native/share/glib-2.0/schemas $ZED_WORKTREE_ROOT/_native/bin/flexa",
+    "command": "just build-run-native",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Native Run",
+    "command": "just run-native",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Native Run (PT_BR)",
+    "command": "just run-native-pt",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Logs",
+    "command": "just logs",
     "cwd": "$ZED_WORKTREE_ROOT",
     "allow_concurrent_runs": false,
     "reveal": "always"
