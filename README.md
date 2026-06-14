@@ -29,10 +29,9 @@
 
 ## Features
 
-- Add multiple cursor folders at once via the file picker
-- Drag and drop cursor folders directly into the window
-- Converts `.cur` and `.ani` cursors to PNG/XCursor format
-- Saves to the configurable output directory (defaults to `~/.local/share/icons`)
+- Add cursor folders manually or just drag them in
+- Convert `.cur` and `.ani` cursors with ease
+- Auto-save to your local icons directory
 
 ## Installation
 
@@ -93,17 +92,24 @@ If you have `flatpak-builder` installed, this is the recommended way to build.
 flatpak install flathub org.gnome.Sdk//50 org.gnome.Platform//50
 ```
 
-2. Build and install locally:
+2. Build and run:
+
+<details>
+<summary>Using <a href="https://just.systems"><code>just</code></a> (Recommended)</summary>
+
+```sh
+just build-run
+```
+</details>
+
+<details>
+<summary>Manual Build</summary>
 
 ```sh
 flatpak-builder --install --force-clean _build io.github.eucaue.flexa.json
-```
-
-3. Run the app:
-
-```sh
 flatpak run io.github.eucaue.flexa
 ```
+</details>
 
 > **Note:** The Flatpak calls `win2xcur` on the host via `flatpak-spawn`, so `win2xcur` must still be installed on the host system (see [Installing win2xcur](#installing-win2xcur)).
 
@@ -129,37 +135,47 @@ sudo apt install libgtk-4-dev libadwaita-1-dev libgirepository1.0-dev meson ninj
 
 Then build:
 
+<details>
+<summary>Using <a href="https://just.systems"><code>just</code></a> (Recommended)</summary>
+
+```sh
+just build-run-native
+```
+</details>
+
+<details>
+<summary>Manual Build</summary>
+
 ```sh
 meson setup build
 meson compile -C build
 sudo meson install -C build
+flexa
 ```
+</details>
 
 ## Usage
 
-1. Click **+** in the header bar or drag and drop a cursor folder into the window
-2. Add as many cursor themes as you want
-3. Click **Convert**
-4. A toast notification will appear when done, click **Open** to reveal the output folder
+1. Hit **+** or drag a cursor folder into the window
+2. Repeat for as many themes as you want
+3. Hit **Convert**, you'll get a toast when it's done with an **Open** shortcut to the output folder
 
 You can change the output directory in **Preferences**.
 
 ### Output
 
-Converted cursors are saved to your configured output directory (default: `~/.local/share/icons`).
-
-Each theme gets its own subfolder (named after the original folder).
+Each theme is saved as its own subfolder (named after the source folder) inside your configured output directory (`~/.local/share/icons` by default).
 
 ## Contributing
 
-Issues and pull requests are welcome at [github.com/eucaue/flexa](https://github.com/eucaue/flexa/issues).
+Found a bug or want a feature? Open an issue or PR at [github.com/eucaue/flexa](https://github.com/eucaue/flexa/issues), contributions are welcome.
 
 ## Acknowledgements
 
 Flexa is built on top of and inspired by these projects:
 
-- **[win2xcur](https://github.com/quantum5/win2xcur)**: The core engine used to convert Windows cursors.
-- **[win-cursor-2-linux](https://github.com/lmezar/win-cursor-2-linux)**: The original script that inspired the idea
+- **[win2xcur](https://github.com/quantum5/win2xcur)**: does the actual conversion heavy lifting
+- **[win-cursor-2-linux](https://github.com/lmezar/win-cursor-2-linux)**: the script that sparked the idea
 
 ## License
 
