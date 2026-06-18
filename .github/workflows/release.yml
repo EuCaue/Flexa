@@ -22,7 +22,7 @@ jobs:
       - name: Install Flatpak dependencies
         run: |
           dnf update -y
-          dnf install -y flatpak flatpak-builder xorg-x11-server-Xvfb git
+          dnf install -y flatpak flatpak-builder xorg-x11-server-Xvfb git nodejs
           git config --global --add safe.directory '*'
           flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - name: Checkout
