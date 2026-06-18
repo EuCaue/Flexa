@@ -317,6 +317,10 @@ class FlexaApplication(Adw.Application):
     def on_convert_files(self, _):
         print(f"converting files: {self.folder_rows}")
 
+        if not CursorConverter.is_imagemagick_supported():
+            self._show_imagemagick_required_dialog()
+            return
+
         # Check win2xcur before touching the UI state
         probe = CursorConverter(
             output_dir=Path("~").expanduser(),  # dummy, not used for the check
@@ -359,6 +363,27 @@ class FlexaApplication(Adw.Application):
     def _on_win2xcur_dialog_response(self, dialog, response_id):
         if response_id == "docs":
             launcher = Gtk.UriLauncher.new("https://github.com/quantum5/win2xcur")
+            launcher.launch(self.window, None, None)
+
+    def _show_imagemagick_required_dialog(self):
+        dialog = Adw.AlertDialog(
+            heading=_("ImageMagick 7.0 Required"),
+            body=_(
+                "win2xcur needs <b>ImageMagick 7.0</b> or newer to convert cursor files.\n\n"
+                "Install ImageMagick 7.0+ and restart Flexa."
+            ),
+        )
+        dialog.set_body_use_markup(True)
+        dialog.add_response("close", _("Close"))
+        dialog.add_response("download", _("Download ImageMagick"))
+        dialog.set_response_appearance("download", Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_default_response("close")
+        dialog.connect("response", self._on_imagemagick_dialog_response)
+        dialog.present(self.window)
+
+    def _on_imagemagick_dialog_response(self, dialog, response_id):
+        if response_id == "download":
+            launcher = Gtk.UriLauncher.new("https://imagemagick.org/script/download.php")
             launcher.launch(self.window, None, None)
 
     def _on_conversion_progress(self, result: ConversionResult):

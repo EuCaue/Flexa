@@ -61,3 +61,17 @@ msgstr ""
 #: src/main.py:398
 msgid "Converted {done} of {total} cursor theme{plural}; {failed} failed"
 msgstr ""
+
+#: src/main.py:406
+msgid "ImageMagick 7.0 Required"
+msgstr ""
+
+#: src/main.py:407
+msgid ""
+"win2xcur needs <b>ImageMagick 7.0</b> or newer to convert cursor files.\n"
+"Install ImageMagick 7.0+ and restart Flexa."
+msgstr ""
+
+#: src/main.py:421
+msgid "Download ImageMagick"
+msgstr ""

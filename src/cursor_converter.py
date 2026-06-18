@@ -1,7 +1,9 @@
 # cursor_converter.py
 
 import os
+import re
 import shutil
+import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -185,6 +187,30 @@ class CursorConverter:
             return True
         except FileNotFoundError:
             return False
+
+    @staticmethod
+    def get_imagemagick_version() -> tuple[int, int, int] | None:
+        """Returns (major, minor, patch) or None if ImageMagick is not found."""
+        for cmd in ("magick", "convert"):
+            try:
+                result = subprocess.run(
+                    [cmd, "-version"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if result.returncode != 0:
+                    continue
+                match = re.search(r"ImageMagick (\d+)\.(\d+)\.(\d+)", result.stdout)
+                if match:
+                    return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+            except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+                continue
+        return None
+
+    @staticmethod
+    def is_imagemagick_supported() -> bool:
+        """Returns True if ImageMagick >= 7.0 is available."""
+        version = CursorConverter.get_imagemagick_version()
+        return version is not None and version >= (7, 0, 0)
 
     def start(self) -> None:
         """Starts the conversion. Non-blocking — returns immediately."""
@@ -399,28 +425,13 @@ class CursorConverter:
     def _resolve_win2xcur_command(self) -> list[str]:
         resolved = shutil.which(self.win2xcur_bin)
         if resolved:
-            if self._is_inside_flatpak() and self._is_host_path(Path(resolved)):
-                return ["/usr/bin/flatpak-spawn", "--host", resolved]
             return [resolved]
-
         for candidate in self._candidate_paths():
-            p = Path(candidate)
-            if not p.is_file():
-                continue
-            if self._is_inside_flatpak() and self._is_host_path(p):
-                return ["/usr/bin/flatpak-spawn", "--host", candidate]
-            return [candidate]
-
+            if Path(candidate).is_file():
+                return [candidate]
         raise FileNotFoundError(
             "win2xcur not found. Checked:\n" + "\n".join(self._candidate_paths())
         )
-
-    def _is_inside_flatpak(self) -> bool:
-        return bool(os.environ.get("FLATPAK_ID")) or Path("/.flatpak-info").exists()
-
-    def _is_host_path(self, path: Path) -> bool:
-        s = str(path)
-        return path.is_absolute() and not s.startswith("/app/") and not s.startswith("/usr/")
 
     def _candidate_paths(self) -> list[str]:
         path_dirs = [e for e in os.environ.get("PATH", "").split(":") if e]
