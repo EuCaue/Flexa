@@ -30,3 +30,8 @@ __pycache__/
 .DS_Store
 dist/
 debian/
+
+# Flatpak build artifacts
+/flexa.flatpak
+/repo/
+/flatpak-github-action-modified-*
