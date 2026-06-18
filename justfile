@@ -57,3 +57,19 @@ build-run-native-pt: install-native run-native-pt
 # View application logs from journalctl
 logs:
     journalctl --user -f -t io.github.eucaue.flexa
+
+# Test Flatpak GitHub Action locally
+act-flatpak:
+    act -j flatpak --bind
+
+# Test RPM GitHub Action locally
+act-rpm:
+    act -j rpm --bind
+
+# Test DEB GitHub Action locally
+act-deb:
+    act -j deb --bind
+
+# Clean build caches and directories
+clean:
+    rm -rf _build build .flatpak-builder _native dist
