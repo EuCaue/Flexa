@@ -39,6 +39,8 @@
 
 Flexa requires the `win2xcur` command-line tool to convert cursor files.
 
+> **Note:** `win2xcur` requires [ImageMagick >= 7.0](https://imagemagick.org/script/download.php) for full cursor format support. If your system has an older version, some cursor files may fail to convert.
+
 **Using pipx (Recommended):**
 
 ```sh
@@ -56,6 +58,14 @@ If you download the RPM package from the [releases page](https://github.com/euca
 
 ```sh
 sudo dnf install ./python3-win2xcur-*.rpm
+```
+
+**Using DEB (Ubuntu/Debian):**
+If you download the DEB package from the [releases page](https://github.com/eucaue/flexa/releases/latest), you can install it using:
+
+```sh
+sudo dpkg -i ./python3-win2xcur_*.deb
+sudo apt-get install -f -y
 ```
 
 ---
