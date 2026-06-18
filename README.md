@@ -110,6 +110,7 @@ flatpak install flathub org.gnome.Sdk//50 org.gnome.Platform//50
 ```sh
 just build-run
 ```
+
 </details>
 
 <details>
@@ -119,9 +120,8 @@ just build-run
 flatpak-builder --install --force-clean _build io.github.eucaue.flexa.json
 flatpak run io.github.eucaue.flexa
 ```
-</details>
 
-> **Note:** The Flatpak calls `win2xcur` on the host via `flatpak-spawn`, so `win2xcur` must still be installed on the host system (see [Installing win2xcur](#installing-win2xcur)).
+</details>
 
 ### Building from source
 
@@ -151,6 +151,7 @@ Then build:
 ```sh
 just build-run-native
 ```
+
 </details>
 
 <details>
@@ -162,6 +163,7 @@ meson compile -C build
 sudo meson install -C build
 flexa
 ```
+
 </details>
 
 ## Usage

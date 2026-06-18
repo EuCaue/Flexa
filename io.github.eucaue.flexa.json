@@ -11,7 +11,6 @@
     "--device=dri",
     "--socket=wayland",
     "--filesystem=home",
-    "--talk-name=org.freedesktop.Flatpak",
     "--env=PYTHONPATH=/app/lib/python3.13/site-packages",
     "--env=PATH=/app/bin:/usr/bin"
   ],
@@ -27,6 +26,57 @@
     "*.a"
   ],
   "modules": [
+    {
+      "name": "imagemagick",
+      "buildsystem": "autotools",
+      "config-opts": [
+        "--prefix=/app",
+        "--disable-modules",
+        "--disable-static",
+        "--without-perl",
+        "--without-x",
+        "--enable-shared"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/ImageMagick/ImageMagick/archive/refs/tags/7.1.1-43.tar.gz",
+          "sha256": "ceb972266b23dc7c1cfce0da5a7f0c9acfb4dc81f40eb542a49476fedbc2618f"
+        }
+      ],
+      "cleanup": [
+        "/bin/Magick++-config",
+        "/bin/MagickCore-config",
+        "/bin/MagickWand-config",
+        "/include",
+        "/lib/pkgconfig"
+      ]
+    },
+    {
+      "name": "win2xcur",
+      "buildsystem": "simple",
+      "build-commands": [
+        "pip3 install --prefix=/app --no-index --find-links . win2xcur-0.2.1-py3-none-any.whl"
+      ],
+      "sources": [
+        {
+          "type": "file",
+          "only-arches": ["x86_64"],
+          "url": "https://files.pythonhosted.org/packages/a5/9d/3584b9984ca4c047aea75214ce1a4c4c73d849bd71b604264b7f5653f8a8/numpy-2.4.6-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "sha256": "a7830bab239b79cda9c08c2da014761cafb48da6150e1da17ac06283f43b6089"
+        },
+        {
+          "type": "file",
+          "url": "https://files.pythonhosted.org/packages/66/60/ca84d0e7937d0fa62e338e2ea3b69e99bdb01f337b6e88b561e12cc40dca/wand-0.7.1-py3-none-any.whl",
+          "sha256": "2c0d611c76b88c8947ad79b8d1ab994388ae6c8b795e54c0e46af431c84b81e4"
+        },
+        {
+          "type": "file",
+          "url": "https://files.pythonhosted.org/packages/2f/39/caa9bd69b2e1ace3a83d7de1b61986d6204f25ea30a4db8b36aa19d7938d/win2xcur-0.2.1-py3-none-any.whl",
+          "sha256": "0a3d23168b1700b46276d420ae9b7e374749ddbd02665dd4fb067f90ff66f2c5"
+        }
+      ]
+    },
     {
       "name": "flexa",
       "buildsystem": "meson",
