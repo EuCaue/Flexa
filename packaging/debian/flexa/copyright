@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: flexa
+Source: https://github.com/eucaue/flexa
+
+Files: *
+Copyright: 2026 eucaue
+License: GPL-3.0+

@@ -1,0 +1,8 @@
+#!/usr/bin/make -f
+%:
+	dh $@ --buildsystem=meson
+
+override_dh_install:
+	dh_install
+	find debian/flexa/usr -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
+	find debian/flexa/usr -name '*.pyc' -delete 2>/dev/null || true

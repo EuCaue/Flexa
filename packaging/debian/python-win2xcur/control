@@ -1,0 +1,16 @@
+Source: python-win2xcur
+Section: python
+Priority: optional
+Maintainer: caue <caue@fedora>
+Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools, python3-wheel, python3-build, python3-numpy, python3-wand
+Standards-Version: 4.7.0
+Homepage: https://github.com/quantum5/win2xcur
+
+Package: python3-win2xcur
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}, python3-numpy, python3-wand
+Description: Convert Windows .cur and .ani cursors to Xcursor format
+ win2xcur is a tool that converts cursors from Windows format (*.cur, *.ani)
+ to Xcursor format. This allows Windows cursor themes to be used on Linux.
+ It also provides x2wincur for the reverse conversion, and win2xcurtheme
+ for converting packaged Windows cursor themes.

@@ -29,7 +29,7 @@ __pycache__/
 *.swp
 .DS_Store
 dist/
-debian/
+/debian/
 
 # Flatpak build artifacts
 /flexa.flatpak
