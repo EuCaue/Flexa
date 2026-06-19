@@ -133,14 +133,15 @@ jobs:
           fetch-depth: 0
       - name: Build python-win2xcur DEB
         run: |
-          WIN2XCUR_VER=$(dpkg-parsechangelog -l "$GITHUB_WORKSPACE/packaging/debian/python-win2xcur/changelog" -SVersion | cut -d- -f1)
+          WORKSPACE_DIR=$(pwd)
+          WIN2XCUR_VER=$(dpkg-parsechangelog -l packaging/debian/python-win2xcur/changelog -SVersion | cut -d- -f1)
           mkdir -p /tmp/win2xcur-build
           cd /tmp/win2xcur-build
           curl -L -o "win2xcur-${WIN2XCUR_VER}.tar.gz" \
             "https://github.com/quantum5/win2xcur/archive/v${WIN2XCUR_VER}/win2xcur-${WIN2XCUR_VER}.tar.gz"
           tar xzf "win2xcur-${WIN2XCUR_VER}.tar.gz"
           cd "win2xcur-${WIN2XCUR_VER}"
-          cp -r "$GITHUB_WORKSPACE/packaging/debian/python-win2xcur" debian
+          cp -r "$WORKSPACE_DIR/packaging/debian/python-win2xcur" debian
           dpkg-buildpackage -us -uc -b
       - name: Install python-win2xcur DEB
         run: |
