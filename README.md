@@ -64,7 +64,7 @@ sudo dnf install ./python3-win2xcur-*.rpm
 If you download the DEB package from the [releases page](https://github.com/eucaue/flexa/releases/latest), you can install it using:
 
 ```sh
-sudo dpkg -i ./python3-win2xcur_*.deb
+sudo apt install ./python3-win2xcur_*.deb
 sudo apt-get install -f -y
 ```
 

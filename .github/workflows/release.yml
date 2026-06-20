@@ -220,7 +220,7 @@ jobs:
           ```
           **DEB** — Download the DEB files below and install:
           ```sh
-          sudo dpkg -i ./python3-win2xcur_*.deb ./flexa_*.deb
+          sudo apt install ./python3-win2xcur_*.deb ./flexa_*.deb
           ```
           **Flathub** — Coming soon.
           ### SHA256 Checksums
