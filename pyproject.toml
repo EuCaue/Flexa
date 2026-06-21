@@ -32,6 +32,7 @@ select = ["E", "F", "W", "I"]
 known-first-party = ["flexa"]
 
 [tool.pyright]
+include = ["src"]
 pythonPlatform = "Linux"
 pythonVersion = "3.11"
 venvPath = "."

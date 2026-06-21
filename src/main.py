@@ -420,9 +420,9 @@ class FlexaApplication(Adw.Application):
                     done=done, total=total, plural=plural
                 )
             else:
-                title = _("Converted {done} of {total} cursor theme{plural}; {failed} failed").format(
-                    done=done, failed=failed, total=total, plural=plural
-                )
+                title = _(
+                    "Converted {done} of {total} cursor theme{plural}; {failed} failed"
+                ).format(done=done, failed=failed, total=total, plural=plural)
 
             toast = Adw.Toast(title=title)
             toast.set_button_label(_("Open"))

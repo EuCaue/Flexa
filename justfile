@@ -73,3 +73,9 @@ act-deb:
 # Clean build caches and directories
 clean:
     rm -rf _build build .flatpak-builder _native dist
+
+# Run code linters (ruff and pyright)
+lint:
+    uv run ruff check .
+    uv run pyright src
+
