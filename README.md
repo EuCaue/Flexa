@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/LibAdwaita-1.5+-blue" alt="LibAdwaita" />
 </a>
 <br><br>
-<p>A simple GNOME app to convert Windows cursor themes to Linux format.</p>
+<p>A GNOME app to convert cursor themes between Windows and Linux formats.</p>
 
 </div>
 
@@ -29,15 +29,17 @@
 
 ## Features
 
+- Convert cursor themes between Windows and Linux formats
+- Convert `.cur` and `.ani` cursors to Linux format
+- Convert Linux Xcursor themes to Windows format
 - Add cursor folders manually or just drag them in
-- Convert `.cur` and `.ani` cursors with ease
-- Auto-save to your local icons directory
+- Configurable output directories for both modes
 
 ## Installation
 
 ### Installing win2xcur
 
-Flexa requires the `win2xcur` command-line tool to convert cursor files.
+Flexa requires the `win2xcur` Python package (which provides both `win2xcur` and `x2wincurtheme` command-line tools) to convert cursor files.
 
 > **Note:** `win2xcur` requires [ImageMagick >= 7.0](https://imagemagick.org/script/download.php) for full cursor format support. If your system has an older version, some cursor files may fail to convert.
 
@@ -168,15 +170,16 @@ flexa
 
 ## Usage
 
-1. Hit **+** or drag a cursor folder into the window
-2. Repeat for as many themes as you want
-3. Hit **Convert**, you'll get a toast when it's done with an **Open** shortcut to the output folder
+1. Select your target conversion mode via the top view switcher (To Linux / To Windows)
+2. Hit **+** or drag a cursor folder into the window
+3. Repeat for as many themes as you want
+4. Hit **Convert**, you'll get a toast when it's done with an **Open** shortcut to the output folder
 
-You can change the output directory in **Preferences**.
+You can change the output directories in **Preferences**.
 
 ### Output
 
-Each theme is saved as its own subfolder (named after the source folder) inside your configured output directory (`~/.local/share/icons` by default).
+Each theme is saved as its own subfolder (named after the source folder) inside your configured output directory (`~/.local/share/icons` for Linux and `~/Cursors` for Windows by default).
 
 ## Contributing
 

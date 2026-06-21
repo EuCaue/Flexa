@@ -6,5 +6,10 @@
 			<summary>Output Directory</summary>
 			<description>Directory where converted cursors are saved.</description>
 		</key>
+		<key name="output-dir-windows" type="s">
+			<default>''</default>
+			<summary>Windows Output Directory</summary>
+			<description>Directory where converted Windows cursors are saved.</description>
+		</key>
 	</schema>
 </schemalist>

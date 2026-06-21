@@ -25,12 +25,17 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
+from enum import Enum
 from dataclasses import dataclass
 from pathlib import Path
 
+class ConversionMode(Enum):
+    TO_LINUX = "to-linux"
+    TO_WINDOWS = "to-windows"
+
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
-from .cursor_converter import ConversionResult, ConversionStatus, CursorConverter
+from .cursor_converter import ConversionResult, ConversionStatus, CursorConverter, ReverseCursorConverter, BaseCursorConverter
 from .preferences import FlexaPreferencesDialog
 from .window import FlexaWindow
 
@@ -56,16 +61,27 @@ class FlexaApplication(Adw.Application):
         self._create_action("about", self.on_about_action)
         self._create_action("preferences", self.on_preferences_action)
         self._create_action("shortcuts", self.on_shortcuts_action, ["<control>comma"])
-        self.folder_rows: list[RowData] = []
+        self.folder_rows: dict[ConversionMode, list[RowData]] = {
+            ConversionMode.TO_LINUX: [],
+            ConversionMode.TO_WINDOWS: [],
+        }
+        self.converters: dict[ConversionMode, CursorConverter | None] = {
+            ConversionMode.TO_LINUX: None,
+            ConversionMode.TO_WINDOWS: None,
+        }
         self.folder_dialog: Gtk.FileDialog = Gtk.FileDialog()
-        self.empty_status_page: Adw.StatusPage = Adw.StatusPage(
+        self.empty_status_page_to_linux = Adw.StatusPage(
+            title=_("No Folders Added"),
+            description=_("Drag folders here or click the button below"),
+            icon_name="folder-symbolic",
+        )
+        self.empty_status_page_to_windows = Adw.StatusPage(
             title=_("No Folders Added"),
             description=_("Drag folders here or click the button below"),
             icon_name="folder-symbolic",
         )
         self.window = None
         self.settings = Gio.Settings(schema_id="io.github.eucaue.flexa")
-        self.converter: CursorConverter | None = None
 
     def do_activate(self):
         """Called when the application is activated.
@@ -80,11 +96,42 @@ class FlexaApplication(Adw.Application):
         win.present()
         self.connect_signals()
 
+    @property
+    def active_mode(self) -> ConversionMode:
+        name = self.window.view_stack.get_visible_child_name()
+        return ConversionMode(name) if name else ConversionMode.TO_LINUX
+
+    def _get_cursor_list(self, mode: ConversionMode | None = None) -> Gtk.ListBox:
+        mode = mode or self.active_mode
+        if mode == ConversionMode.TO_LINUX:
+            return self.window.cursor_list_to_linux
+        return self.window.cursor_list_to_windows
+
+    def _get_btn_convert(self, mode: ConversionMode | None = None) -> Gtk.Button:
+        mode = mode or self.active_mode
+        if mode == ConversionMode.TO_LINUX:
+            return self.window.btn_convert_to_linux
+        return self.window.btn_convert_to_windows
+
     def connect_signals(self):
         self.window.btn_add.connect("clicked", self.on_add_folders)
-        self.window.btn_convert.connect("clicked", self.on_convert_files)
+        self.window.btn_convert_to_linux.connect("clicked", self.on_convert_files)
+        self.window.btn_convert_to_windows.connect("clicked", self.on_convert_files)
+        self.window.view_stack.connect("notify::visible-child", self._on_view_changed)
         self.setup_drop_target()
         self.setup_empty_state()
+
+    def _on_view_changed(self, stack, pspec):
+        new_mode = self.active_mode
+
+
+        rows = self.folder_rows[new_mode]
+        converter = self.converters[new_mode]
+        btn = self._get_btn_convert(new_mode)
+        is_converting = converter is not None and converter.is_running
+        btn.set_sensitive(len(rows) > 0 and not is_converting)
+
+
 
     def _create_action(self, name, callback, shortcuts=None):
         """Add an application action.
@@ -108,8 +155,7 @@ class FlexaApplication(Adw.Application):
             application_icon="io.github.eucaue.flexa",
             developer_name="EuCaue",
             version="1.0.0",
-            comments=_("A simple GNOME app to convert Windows cursor themes to Linux format."),
-            # TODO:
+            comments=_("A GNOME app to convert cursor themes between Windows and Linux formats."),
             website="https://github.com/eucaue/",
             issue_url="https://github.com/eucaue/flexa/issues",
             translator_credits=_("EuCaue"),
@@ -134,8 +180,10 @@ class FlexaApplication(Adw.Application):
 
     def on_add_folders(self, widget):
         """Callback for the app.add_files action."""
-        print("Opened dialog")
-        self.folder_dialog.set_title(_("Select cursor folders"))
+        if self.active_mode == ConversionMode.TO_LINUX:
+            self.folder_dialog.set_title(_("Select Windows cursor folders"))
+        else:
+            self.folder_dialog.set_title(_("Select Linux cursor theme folders"))
         self.folder_dialog.select_multiple_folders(self.window, None, self.on_select_folders, None)
 
     def on_select_folders(self, dialog, result, _):
@@ -173,11 +221,11 @@ class FlexaApplication(Adw.Application):
                 continue
 
             row = self.on_create_folder_row(folder_name, folder_path)
-            self.window.cursor_list.append(row)
+            self._get_cursor_list().append(row)
             added += 1
 
         if added > 0:
-            self.window.btn_convert.set_sensitive(True)
+            self._get_btn_convert().set_sensitive(True)
         if rejected:
             self._show_invalid_folders_dialog(rejected)
 
@@ -185,9 +233,14 @@ class FlexaApplication(Adw.Application):
 
     def _folder_already_added(self, folder_path: str) -> bool:
         """Check if folder is already in the list."""
-        return any(f.folder_path == folder_path for f in self.folder_rows)
+        return any(f.folder_path == folder_path for f in self.folder_rows[self.active_mode])
 
     def _has_cursor_files(self, folder_path: str) -> bool:
+        if self.active_mode == ConversionMode.TO_LINUX:
+            return self._has_windows_cursor_files(folder_path)
+        return self._has_linux_cursor_files(folder_path)
+
+    def _has_windows_cursor_files(self, folder_path: str) -> bool:
         """Check if folder contains Windows cursor files."""
         cursor_extensions = {".cur", ".ani"}
         cursor_files = {"install.inf"}
@@ -204,13 +257,43 @@ class FlexaApplication(Adw.Application):
 
         return False
 
+    def _has_linux_cursor_files(self, folder_path: str) -> bool:
+        """Check for Xcursor files via cursors/ subdir or magic bytes."""
+        path = Path(folder_path)
+
+        cursors_subdir = path / "cursors"
+        target_dir = cursors_subdir if cursors_subdir.is_dir() else path
+
+        basic_cursors = {"arrow", "left_ptr", "default", "pointer"}
+
+        try:
+            for item in target_dir.iterdir():
+                if item.is_file() and not item.suffix:
+                    if item.name in basic_cursors:
+                        return True
+                    try:
+                        with open(item, "rb") as f:
+                            magic = f.read(4)
+                            if magic == b"Xcur":
+                                return True
+                    except (OSError, IOError):
+                        continue
+        except Exception:
+            pass
+
+        return False
+
     def _show_invalid_folders_dialog(self, rejected: list[str]):
         rejected_list = "\n".join(f"• {name}" for name in rejected)
 
+        if self.active_mode == ConversionMode.TO_LINUX:
+            expected = _("Expected *.cur, *.ani or install.inf inside the folder.")
+        else:
+            expected = _("Expected a 'cursors' subdirectory or Xcursor files inside the folder.")
+
         dialog = Adw.AlertDialog(
             heading=_("No cursor files found"),
-            body=f"{rejected_list}\n\n"
-            f"{_('Expected *.cur, *.ani or install.inf inside the folder.')}",
+            body=f"{rejected_list}\n\n{expected}",
         )
         dialog.add_response("ok", _("OK"))
         dialog.set_default_response("ok")
@@ -255,30 +338,33 @@ class FlexaApplication(Adw.Application):
             stack=status_stack,
             spinner=spinner,
         )
-        remove_btn.connect("clicked", lambda _: self.on_remove_folder(row, row_data))
-        self.folder_rows.append(row_data)
+        mode = self.active_mode
+        remove_btn.connect("clicked", lambda _: self.on_remove_folder(row, row_data, mode))
+        self.folder_rows[mode].append(row_data)
         row.add_prefix(folder_icon)
         row.add_suffix(status_stack)
         row.add_suffix(remove_btn)
         return row
 
-    def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData):
-        self.window.cursor_list.remove(row)
-        self.folder_rows.remove(row_data)
-        is_converting = self.converter is not None and self.converter.is_running
-        self.window.btn_convert.set_sensitive(len(self.folder_rows) > 0 and not is_converting)
+    def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData, mode: ConversionMode):
+        self._get_cursor_list(mode).remove(row)
+        self.folder_rows[mode].remove(row_data)
+        converter = self.converters[mode]
+        is_converting = converter is not None and converter.is_running
+        self._get_btn_convert(mode).set_sensitive(len(self.folder_rows[mode]) > 0 and not is_converting)
         if is_converting:
-            self.converter.remove(Path(row_data.folder_path))
-            if len(self.folder_rows) == 0:
-                self.converter.cancel()
+            converter.remove(Path(row_data.folder_path))
+            if len(self.folder_rows[mode]) == 0:
+                converter.cancel()
         return True
 
     def setup_drop_target(self):
-        drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
-        drop_target.connect("drop", self.on_drop_folders)
-        drop_target.connect("enter", self.on_drop_enter)
-        drop_target.connect("leave", self.on_drop_leave)
-        self.window.cursor_list.add_controller(drop_target)
+        for list_box in [self.window.cursor_list_to_linux, self.window.cursor_list_to_windows]:
+            drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
+            drop_target.connect("drop", self.on_drop_folders)
+            drop_target.connect("enter", self.on_drop_enter, list_box)
+            drop_target.connect("leave", self.on_drop_leave, list_box)
+            list_box.add_controller(drop_target)
 
     def on_drop_folders(self, target: Gtk.DropTarget, value: Gdk.FileList, x: int, y: int):
         folders = [
@@ -294,53 +380,102 @@ class FlexaApplication(Adw.Application):
         ]
 
         added = self._add_folders(folders)
-        self.on_drop_leave(target)
+        self.window.cursor_list_to_linux.remove_css_class("drop-target")
+        self.window.cursor_list_to_windows.remove_css_class("drop-target")
         return added > 0
 
-    def on_drop_enter(self, target, x, y):
-        self.window.cursor_list.add_css_class("drop-target")
+    def on_drop_enter(self, target, x, y, list_box):
+        list_box.add_css_class("drop-target")
         return Gdk.DragAction.COPY
 
-    def on_drop_leave(self, target):
-        self.window.cursor_list.remove_css_class("drop-target")
+    def on_drop_leave(self, target, list_box):
+        list_box.remove_css_class("drop-target")
 
     def setup_empty_state(self):
-        self.window.cursor_list.set_placeholder(self.empty_status_page)
-        click = Gtk.GestureClick()
-        click.connect("pressed", self.on_empty_state_clicked)
-        self.empty_status_page.add_controller(click)
+        self.window.cursor_list_to_linux.set_placeholder(self.empty_status_page_to_linux)
+        self.window.cursor_list_to_windows.set_placeholder(self.empty_status_page_to_windows)
+
+        click_linux = Gtk.GestureClick()
+        click_linux.connect("pressed", self.on_empty_state_clicked)
+        self.empty_status_page_to_linux.add_controller(click_linux)
+
+        click_windows = Gtk.GestureClick()
+        click_windows.connect("pressed", self.on_empty_state_clicked)
+        self.empty_status_page_to_windows.add_controller(click_windows)
 
     def on_empty_state_clicked(self, gesture: Gtk.GestureClick, x: float, y: float, _):
-        if len(self.folder_rows) == 0:
+        if len(self.folder_rows[self.active_mode]) == 0:
             self.on_add_folders(None)
 
     def on_convert_files(self, _):
-        print(f"converting files: {self.folder_rows}")
+        mode = self.active_mode
+        btn = self._get_btn_convert(mode)
 
-        if not CursorConverter.is_imagemagick_supported():
+        if not BaseCursorConverter.is_imagemagick_supported():
             self._show_imagemagick_required_dialog()
             return
 
-        # Check win2xcur before touching the UI state
-        probe = CursorConverter(
-            output_dir=Path("~").expanduser(),  # dummy, not used for the check
-            on_progress=lambda _: None,
-            on_all_done=lambda _: None,
-        )
-        if not probe.is_win2xcur_available():
-            self._show_win2xcur_missing_dialog()
-            return
+        if mode == ConversionMode.TO_LINUX:
+            probe = CursorConverter(
+                output_dir=Path("~").expanduser(),
+                on_progress=lambda _: None,
+                on_all_done=lambda _: None,
+            )
+            if not probe.is_win2xcur_available():
+                self._show_win2xcur_missing_dialog()
+                return
+            output_key = "output-dir"
+        else:
+            probe = ReverseCursorConverter(
+                output_dir=Path("~").expanduser(),
+                on_progress=lambda _: None,
+                on_all_done=lambda _: None,
+            )
+            if not probe.is_x2wincurtheme_available():
+                self._show_x2wincurtheme_missing_dialog()
+                return
+            output_key = "output-dir-windows"
 
-        self.window.btn_convert.set_sensitive(False)
+        btn.set_sensitive(False)
         self.window.btn_add.set_sensitive(False)
-        self.window.btn_convert.set_child(Gtk.Spinner(spinning=True))
-        self.converter = CursorConverter(
-            output_dir=Path(self.settings.get_string("output-dir")).expanduser(),
-            on_progress=self._on_conversion_progress,
-            on_all_done=self._show_done_toast,
+        btn.set_child(Gtk.Spinner(spinning=True))
+
+        output_dir = Path(self.settings.get_string(output_key)).expanduser()
+
+        if mode == ConversionMode.TO_LINUX:
+            converter = CursorConverter(
+                output_dir=output_dir,
+                on_progress=self._on_conversion_progress,
+                on_all_done=lambda results: self._show_done_toast(results, mode),
+            )
+        else:
+            converter = ReverseCursorConverter(
+                output_dir=output_dir,
+                on_progress=self._on_conversion_progress,
+                on_all_done=lambda results: self._show_done_toast(results, mode),
+            )
+
+        self.converters[mode] = converter
+        converter.add_many([Path(f.folder_path) for f in self.folder_rows[mode]])
+        converter.start()
+
+    def _show_x2wincurtheme_missing_dialog(self):
+        dialog = Adw.AlertDialog(
+            heading=_("x2wincurtheme Not Found"),
+            body=_(
+                "Flexa requires <b>x2wincurtheme</b> to convert Linux cursors to Windows, "
+                "but it could not be found on your system.\n\n"
+                "It is included in the <b>win2xcur</b> package. Install with:\n"
+                "<tt>pip install win2xcur</tt>"
+            ),
         )
-        self.converter.add_many([Path(f.folder_path) for f in self.folder_rows])
-        self.converter.start()
+        dialog.set_body_use_markup(True)
+        dialog.add_response("close", _("Close"))
+        dialog.add_response("docs", _("Open win2xcur page"))
+        dialog.set_response_appearance("docs", Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_default_response("close")
+        dialog.connect("response", self._on_win2xcur_dialog_response)
+        dialog.present(self.window)
 
     def _show_win2xcur_missing_dialog(self):
         dialog = Adw.AlertDialog(
@@ -388,7 +523,7 @@ class FlexaApplication(Adw.Application):
 
     def _on_conversion_progress(self, result: ConversionResult):
         file = next(
-            (f for f in self.folder_rows if Path(f.folder_path) == result.folder_path),
+            (f for mode_rows in self.folder_rows.values() for f in mode_rows if Path(f.folder_path) == result.folder_path),
             None,
         )
         if file is None:
@@ -404,12 +539,19 @@ class FlexaApplication(Adw.Application):
                 file.spinner.set_spinning(False)
                 file.stack.set_visible_child_name("error")
 
-    def _show_done_toast(self, results: list[ConversionResult]):
-        self.window.btn_convert.set_sensitive(len(self.folder_rows) > 0)
-        self.window.btn_convert.set_label(_("Convert"))
-        self.window.btn_add.set_sensitive(True)
+    def _show_done_toast(self, results: list[ConversionResult], mode: ConversionMode):
+        btn = self._get_btn_convert(mode)
+        btn.set_sensitive(len(self.folder_rows[mode]) > 0)
+        btn.set_label(_("Convert"))
+        
+        other_mode = ConversionMode.TO_WINDOWS if mode == ConversionMode.TO_LINUX else ConversionMode.TO_LINUX
+        other_converter = self.converters[other_mode]
+        if not (other_converter and other_converter.is_running):
+            self.window.btn_add.set_sensitive(True)
 
-        if len(self.folder_rows) > 0 and results:
+        self.converters[mode] = None
+
+        if len(self.folder_rows[mode]) > 0 and results:
             done: int = sum(1 for r in results if r.status == ConversionStatus.DONE)
             failed: int = sum(1 for r in results if r.status == ConversionStatus.ERROR)
             total: int = len(results)
@@ -426,13 +568,13 @@ class FlexaApplication(Adw.Application):
 
             toast = Adw.Toast(title=title)
             toast.set_button_label(_("Open"))
-            toast.connect("button-clicked", self.on_open_output_dir)
+            toast.connect("button-clicked", self.on_open_output_dir, mode)
             self.window.toast_overlay.add_toast(toast)
 
-    def on_open_output_dir(self, _toast):
-        raw_output_path = self.converter.output_dir.parts
-        output_path = GLib.build_filenamev(raw_output_path)
-        file = Gio.File.new_for_path(output_path)
+    def on_open_output_dir(self, _toast, mode: ConversionMode):
+        output_key = "output-dir" if mode == ConversionMode.TO_LINUX else "output-dir-windows"
+        output_path = Path(self.settings.get_string(output_key)).expanduser()
+        file = Gio.File.new_for_path(str(output_path))
         launcher = Gtk.FileLauncher.new(file)
         try:
             launcher.launch(self.window, None, None)

@@ -5,11 +5,11 @@
   <project_license>GPL-3.0-or-later</project_license>
 
   <name>Flexa</name>
-  <summary>Convert Windows cursor themes to Linux format</summary>
+  <summary>Convert cursor themes between Windows and Linux formats</summary>
   <description>
     <p>
-      Flexa is a simple GNOME application that converts Windows cursor
-      themes (.cur and .ani files) to the Linux XCursor format. It
+      Flexa is a GNOME application that converts cursor themes between
+      Windows (.cur and .ani files) and Linux XCursor formats. It
       provides a clean, intuitive interface following the GNOME Human
       Interface Guidelines.
     </p>
@@ -59,7 +59,7 @@
       <description translate="no">
         <p>Initial release</p>
         <ul>
-          <li>Convert .cur and .ani cursors to XCursor format</li>
+          <li>Convert cursors between Windows and Linux formats</li>
           <li>Drag and drop support</li>
           <li>Multiple folder batch conversion</li>
           <li>Configurable output directory</li>

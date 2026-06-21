@@ -134,59 +134,19 @@ _INF_KEY_ALIASES: dict[str, str] = {
 
 
 @dataclass
-class CursorConverter:
-    """
-    Converts Windows cursor folders to Linux using Gio.Task and
-    Gio.Subprocess — native GLib APIs, without manual threading.
-
-    - Gio.Task:       runs work in a GLib thread pool, calls callback
-                      on the main loop automatically (without manual idle_add)
-    - Gio.Subprocess: asynchronous process, does not block any thread
-    - Gio.Cancellable: cooperative cancellation propagated to subprocesses
-
-    Usage:
-        converter = CursorConverter(
-            output_dir=Path("~/.icons").expanduser(),
-            on_progress=lambda r: update_ui(r),
-            on_all_done=lambda results: show_toast(results),
-        )
-        converter.add_many([Path("/tmp/MyCursor")])
-        converter.start()
-
-        # To cancel:
-        converter.cancel()
-    """
+class BaseCursorConverter:
+    """Base class with task scheduling, cancellation and progress."""
 
     output_dir: Path
     on_progress: OnProgressCallback
     on_all_done: OnAllDoneCallback
-    win2xcur_bin: str = "win2xcur"
 
-    # Shared Cancellable among all session subprocesses
     _cancellable: Gio.Cancellable = field(default_factory=Gio.Cancellable, init=False, repr=False)
     _folders: list[Path] = field(default_factory=list, init=False, repr=False)
     _results: list[ConversionResult] = field(default_factory=list, init=False, repr=False)
     _skipped: set[Path] = field(default_factory=set, init=False, repr=False)
     _cancellables: dict[Path, Gio.Cancellable] = field(default_factory=dict, init=False, repr=False)
     _is_running: bool = field(default=False, init=False, repr=False)
-
-    @property
-    def is_running(self) -> bool:
-        return self._is_running
-
-    def add(self, folder: Path) -> None:
-        self._folders.append(folder)
-
-    def add_many(self, folders: list[Path]) -> None:
-        self._folders.extend(folders)
-
-    def is_win2xcur_available(self) -> bool:
-        """Returns True if the win2xcur binary can be located on the system."""
-        try:
-            self._resolve_win2xcur_command()
-            return True
-        except FileNotFoundError:
-            return False
 
     @staticmethod
     def get_imagemagick_version() -> tuple[int, int, int] | None:
@@ -209,8 +169,18 @@ class CursorConverter:
     @staticmethod
     def is_imagemagick_supported() -> bool:
         """Returns True if ImageMagick >= 7.0 is available."""
-        version = CursorConverter.get_imagemagick_version()
+        version = BaseCursorConverter.get_imagemagick_version()
         return version is not None and version >= (7, 0, 0)
+
+    @property
+    def is_running(self) -> bool:
+        return self._is_running
+
+    def add(self, folder: Path) -> None:
+        self._folders.append(folder)
+
+    def add_many(self, folders: list[Path]) -> None:
+        self._folders.extend(folders)
 
     def start(self) -> None:
         """Starts the conversion. Non-blocking — returns immediately."""
@@ -336,6 +306,32 @@ class CursorConverter:
 
         # Schedules the next item
         self._process_next(index + 1)
+
+    def _worker(self, task: Gio.Task, folder: Path) -> None:
+        raise NotImplementedError
+
+    def _write_error_log(self, out_theme: Path, exc: Exception) -> None:
+        out_theme.mkdir(parents=True, exist_ok=True)
+        (out_theme / "conversion-error.txt").write_text(
+            f"error={exc}\nPATH={os.environ.get('PATH', '')}\n",
+            encoding="utf-8",
+        )
+
+
+@dataclass
+class CursorConverter(BaseCursorConverter):
+    """Windows → Linux (win2xcur)"""
+    win2xcur_bin: str = "win2xcur"
+
+    def is_win2xcur_available(self) -> bool:
+        """Returns True if the win2xcur binary can be located on the system."""
+        try:
+            self._resolve_win2xcur_command()
+            return True
+        except FileNotFoundError:
+            return False
+
+
 
     def _worker(self, task: Gio.Task, folder: Path) -> None:
         """
@@ -514,9 +510,96 @@ class CursorConverter:
             encoding="utf-8",
         )
 
-    def _write_error_log(self, out_theme: Path, exc: Exception) -> None:
-        out_theme.mkdir(parents=True, exist_ok=True)
-        (out_theme / "conversion-error.txt").write_text(
-            f"error={exc}\nPATH={os.environ.get('PATH', '')}\n",
-            encoding="utf-8",
+
+@dataclass
+class ReverseCursorConverter(BaseCursorConverter):
+    """Linux → Windows (x2wincurtheme)"""
+    x2wincurtheme_bin: str = "x2wincurtheme"
+
+    def is_x2wincurtheme_available(self) -> bool:
+        try:
+            self._resolve_x2wincurtheme_command()
+            return True
+        except FileNotFoundError:
+            return False
+
+    def _resolve_x2wincurtheme_command(self) -> list[str]:
+        resolved = shutil.which(self.x2wincurtheme_bin)
+        if resolved:
+            return [resolved]
+        for candidate in self._candidate_paths():
+            if Path(candidate).is_file():
+                return [candidate]
+        raise FileNotFoundError(
+            "x2wincurtheme not found. Checked:\n" + "\n".join(self._candidate_paths())
         )
+
+    def _candidate_paths(self) -> list[str]:
+        path_dirs = [e for e in os.environ.get("PATH", "").split(":") if e]
+        seen: set[str] = set()
+        result: list[str] = []
+        for entry in [*path_dirs, str(Path("~/.local/bin").expanduser())]:
+            candidate = str(Path(entry) / self.x2wincurtheme_bin)
+            if candidate not in seen:
+                seen.add(candidate)
+                result.append(candidate)
+        return result
+
+    def _worker(self, task: Gio.Task, folder: Path) -> None:
+        theme_name = folder.parent.name if folder.name.lower() == "cursors" else folder.name
+        out_theme = self.output_dir / theme_name
+        cancellable = task.get_cancellable()
+
+        try:
+            if cancellable and cancellable.is_cancelled():
+                task.return_error(GLib.Error("Cancelled"))
+                return
+
+            out_theme.mkdir(parents=True, exist_ok=True)
+            theme_dir = self._resolve_theme_dir(folder)
+            self._run_x2wincurtheme_sync(theme_dir, out_theme, theme_name, cancellable)
+
+            result = ConversionResult(
+                folder_name=theme_name,
+                folder_path=folder,
+                output_path=out_theme,
+                status=ConversionStatus.DONE,
+            )
+            task.return_value(result)
+
+        except Exception as exc:
+            if cancellable and cancellable.is_cancelled():
+                task.return_error(GLib.Error("Cancelled"))
+            else:
+                self._write_error_log(out_theme, exc)
+                task.return_error(GLib.Error(str(exc)))
+
+    def _resolve_theme_dir(self, folder: Path) -> Path:
+        """Return the theme root dir (must contain a cursors/ subdir)."""
+        if (folder / "cursors").is_dir():
+            return folder / "cursors"
+        return folder
+
+    def _run_x2wincurtheme_sync(
+        self,
+        theme_dir: Path,
+        out_dir: Path,
+        theme_name: str,
+        cancellable: Gio.Cancellable | None,
+    ) -> None:
+        x2wincurtheme_cmd = self._resolve_x2wincurtheme_command()
+
+        launcher = Gio.SubprocessLauncher.new(
+            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+        )
+        proc = launcher.spawnv(
+            [*x2wincurtheme_cmd, "-n", theme_name, "-o", str(out_dir), str(theme_dir)]
+        )
+
+        ok, _stdout, stderr_bytes = proc.communicate(None, cancellable)
+
+        if not ok or proc.get_exit_status() != 0:
+            stderr = (
+                stderr_bytes.get_data().decode(errors="replace") if stderr_bytes else ""
+            )
+            raise RuntimeError(f"x2wincurtheme failed for {theme_dir.name}: {stderr}")

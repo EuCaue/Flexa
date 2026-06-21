@@ -6,6 +6,13 @@
     <property name="title" translatable="yes">Flexa</property>
     <property name="default-width">600</property>
     <property name="default-height">650</property>
+    <child>
+      <object class="AdwBreakpoint">
+        <condition>max-width: 550sp</condition>
+        <setter object="view_switcher" property="visible">False</setter>
+        <setter object="view_switcher_bar" property="reveal">True</setter>
+      </object>
+    </child>
     <property name="content">
       <object class="AdwToastOverlay" id="toast_overlay">
         <property name="child">
@@ -24,6 +31,12 @@
                     </property>
                   </object>
                 </child>
+                <child type="title">
+                  <object class="AdwViewSwitcher" id="view_switcher">
+                    <property name="stack">view_stack</property>
+                    <property name="policy">wide</property>
+                  </object>
+                </child>
                 <child type="end">
                   <object class="GtkMenuButton">
                     <property name="primary">True</property>
@@ -36,48 +49,119 @@
             </child>
 
             <property name="content">
-              <object class="GtkScrolledWindow">
-                <property name="vexpand">True</property>
-                <property name="hexpand">True</property>
+              <object class="AdwViewStack" id="view_stack">
                 <child>
-                  <object class="GtkListBox" id="cursor_list">
-                    <property name="selection-mode">none</property>
-                    <property name="margin-top">24</property>
-                    <property name="margin-bottom">24</property>
-                    <property name="margin-start">12</property>
-                    <property name="margin-end">12</property>
-                    <style>
-                      <class name="boxed-list"/>
-                    </style>
+                  <object class="AdwViewStackPage">
+                    <property name="name">to-linux</property>
+                    <property name="title" translatable="yes">To Linux</property>
+                    <property name="icon-name">computer-symbolic</property>
+                    <property name="child">
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkScrolledWindow">
+                            <property name="vexpand">True</property>
+                            <property name="hexpand">True</property>
+                            <child>
+                              <object class="GtkListBox" id="cursor_list_to_linux">
+                                <property name="selection-mode">none</property>
+                                <property name="margin-top">24</property>
+                                <property name="margin-bottom">24</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <style>
+                                  <class name="boxed-list"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="halign">center</property>
+                            <property name="margin-bottom">24</property>
+                            <child>
+                              <object class="GtkButton" id="btn_convert_to_linux">
+                                <property name="label" translatable="yes">Convert</property>
+                                <property name="sensitive">False</property>
+                                <property name="width-request">200</property>
+                                <property name="cursor">
+                                  <object class="GdkCursor">
+                                    <property name="name">pointer</property>
+                                  </object>
+                                </property>
+                                <style>
+                                  <class name="suggested-action"/>
+                                  <class name="pill"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+
+                <child>
+                  <object class="AdwViewStackPage">
+                    <property name="name">to-windows</property>
+                    <property name="title" translatable="yes">To Windows</property>
+                    <property name="icon-name">application-x-executable-symbolic</property>
+                    <property name="child">
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkScrolledWindow">
+                            <property name="vexpand">True</property>
+                            <property name="hexpand">True</property>
+                            <child>
+                              <object class="GtkListBox" id="cursor_list_to_windows">
+                                <property name="selection-mode">none</property>
+                                <property name="margin-top">24</property>
+                                <property name="margin-bottom">24</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <style>
+                                  <class name="boxed-list"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="halign">center</property>
+                            <property name="margin-bottom">24</property>
+                            <child>
+                              <object class="GtkButton" id="btn_convert_to_windows">
+                                <property name="label" translatable="yes">Convert</property>
+                                <property name="sensitive">False</property>
+                                <property name="width-request">200</property>
+                                <property name="cursor">
+                                  <object class="GdkCursor">
+                                    <property name="name">pointer</property>
+                                  </object>
+                                </property>
+                                <style>
+                                  <class name="suggested-action"/>
+                                  <class name="pill"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </property>
                   </object>
                 </child>
               </object>
             </property>
 
             <child type="bottom">
-              <object class="GtkActionBar">
-                <property name="revealed">True</property>
-                <child type="center">
-                  <object class="GtkBox">
-                    <property name="margin-bottom">12</property>
-                    <child>
-                      <object class="GtkButton" id="btn_convert">
-                        <property name="label" translatable="yes">Convert</property>
-                        <property name="sensitive">False</property>
-                        <property name="width-request">200</property>
-                        <property name="cursor">
-                          <object class="GdkCursor">
-                            <property name="name">pointer</property>
-                          </object>
-                        </property>
-                        <style>
-                          <class name="suggested-action"/>
-                          <class name="pill"/>
-                        </style>
-                      </object>
-                    </child>
-                  </object>
-                </child>
+              <object class="AdwViewSwitcherBar" id="view_switcher_bar">
+                <property name="stack">view_stack</property>
+                <property name="reveal">False</property>
               </object>
             </child>
 

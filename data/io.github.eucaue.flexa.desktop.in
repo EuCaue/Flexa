@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Flexa
-GenericName=Windows Cursor Converter
-Comment=Convert Windows cursor themes to Linux format
+GenericName=Cursor Theme Converter
+Comment=Convert cursor themes between Windows and Linux formats
 Exec=flexa
 Icon=io.github.eucaue.flexa
 Terminal=false
