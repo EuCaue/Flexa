@@ -79,3 +79,8 @@ lint:
     uv run ruff check .
     uv run pyright src
 
+# Auto-fix lint errors and format code
+format:
+    uv run ruff check --fix .
+    uv run ruff format .
+

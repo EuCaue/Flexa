@@ -25,9 +25,10 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
+
 
 class ConversionMode(Enum):
     TO_LINUX = "to-linux"
@@ -35,7 +36,13 @@ class ConversionMode(Enum):
 
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
-from .cursor_converter import ConversionResult, ConversionStatus, CursorConverter, ReverseCursorConverter, BaseCursorConverter
+from .cursor_converter import (
+    BaseCursorConverter,
+    ConversionResult,
+    ConversionStatus,
+    CursorConverter,
+    ReverseCursorConverter,
+)
 from .preferences import FlexaPreferencesDialog
 from .window import FlexaWindow
 
@@ -543,7 +550,7 @@ class FlexaApplication(Adw.Application):
         btn = self._get_btn_convert(mode)
         btn.set_sensitive(len(self.folder_rows[mode]) > 0)
         btn.set_label(_("Convert"))
-        
+
         other_mode = ConversionMode.TO_WINDOWS if mode == ConversionMode.TO_LINUX else ConversionMode.TO_LINUX
         other_converter = self.converters[other_mode]
         if not (other_converter and other_converter.is_running):

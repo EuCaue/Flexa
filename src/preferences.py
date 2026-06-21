@@ -7,7 +7,7 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
 
     output_dir_row: Adw.EntryRow = Gtk.Template.Child()
     btn_browse_output: Gtk.Button = Gtk.Template.Child()
-    
+
     output_dir_windows_row: Adw.EntryRow = Gtk.Template.Child()
     btn_browse_output_windows: Gtk.Button = Gtk.Template.Child()
 
