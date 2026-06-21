@@ -3,11 +3,11 @@ default:
 
 # Build the flatpak application
 build:
-    flatpak-builder --user --force-clean _build io.github.eucaue.flexa.json
+    flatpak-builder --ccache --user --force-clean _build io.github.eucaue.flexa.json
 
 # Install the flatpak application
 install:
-    flatpak-builder --user --install --force-clean _build io.github.eucaue.flexa.json
+    flatpak-builder --ccache --user --install --force-clean _build io.github.eucaue.flexa.json
 
 # Run the installed flatpak application
 run:
