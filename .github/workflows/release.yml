@@ -185,9 +185,59 @@ jobs:
           name: flexa-deb
           path: dist/
 
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-python
+            mingw-w64-x86_64-gtk4
+            mingw-w64-x86_64-python-gobject
+            mingw-w64-x86_64-libadwaita
+            mingw-w64-x86_64-python-pip
+            mingw-w64-x86_64-glib2
+            zip
+      - name: Install PyInstaller and dependencies
+        run: pip install pyinstaller win2xcur
+      - name: Compile GSettings Schema
+        run: glib-compile-schemas data/
+      - name: Build with PyInstaller
+        run: |
+          mkdir -p package/share/icons
+          cp -r /mingw64/share/icons/Adwaita package/share/icons/
+          mkdir -p package/share/glib-2.0/schemas
+          cp data/gschemas.compiled package/share/glib-2.0/schemas/
+          pyinstaller --noconfirm --onedir --windowed \
+            --add-data "src/window.ui;src" \
+            --add-data "src/preferences-dialog.ui;src" \
+            --add-data "src/shortcuts-dialog.ui;src" \
+            --add-data "data/io.github.eucaue.flexa.gschema.xml;data" \
+            src/main.py
+          cp -r package/share dist/main/
+      - name: Zip Release
+        run: |
+          cd dist
+          zip -r flexa-windows.zip main/
+      - name: Upload Windows artifact
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: flexa-windows
+          path: dist/flexa-windows.zip
+
   release:
     name: Create Release
-    needs: [flatpak, rpm, deb]
+    needs: [flatpak, rpm, deb, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     permissions:
@@ -205,6 +255,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: flexa-deb
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flexa-windows
       - name: Generate Release Notes with Checksums
         run: |
           cat << 'EOF' > release_body.md
@@ -222,12 +276,13 @@ jobs:
           ```sh
           sudo apt install ./python3-win2xcur_*.deb ./flexa_*.deb
           ```
+          **Windows** — Download `flexa-windows.zip`, extract, and run `main/main.exe`.
           **Flathub** — Coming soon.
           ### SHA256 Checksums
           | File | SHA256 Checksum |
           |------|-----------------|
           EOF
-          for f in flexa.flatpak $(find . -name "*.rpm") $(find . -name "*.deb"); do
+          for f in flexa.flatpak flexa-windows.zip $(find . -name "*.rpm") $(find . -name "*.deb"); do
             if [ -f "$f" ]; then
               sha=$(sha256sum "$f" | cut -d' ' -f1)
               echo "| \`$(basename $f)\` | \`$sha\` |" >> release_body.md
@@ -244,5 +299,6 @@ jobs:
           body_path: release_body.md
           files: |
             flexa.flatpak
+            flexa-windows.zip
             **/*.rpm
             **/*.deb

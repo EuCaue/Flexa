@@ -35,8 +35,12 @@ try:
     locale.setlocale(locale.LC_ALL, '')
 except:
     pass
-locale.bindtextdomain('flexa', localedir)
-locale.textdomain('flexa')
+try:
+    locale.bindtextdomain('flexa', localedir)
+    locale.textdomain('flexa')
+except AttributeError:
+    # ponytail: Windows lacks locale.bindtextdomain
+    pass
 gettext.bindtextdomain('flexa', localedir)
 gettext.textdomain('flexa')
 

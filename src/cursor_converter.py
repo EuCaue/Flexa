@@ -1,6 +1,7 @@
 # cursor_converter.py
 
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -151,7 +152,8 @@ class BaseCursorConverter:
     @staticmethod
     def get_imagemagick_version() -> tuple[int, int, int] | None:
         """Returns (major, minor, patch) or None if ImageMagick is not found."""
-        for cmd in ("magick", "convert"):
+        commands = ("magick",) if platform.system() == "Windows" else ("magick", "convert")
+        for cmd in commands:
             try:
                 result = subprocess.run(
                     [cmd, "-version"],
@@ -416,7 +418,10 @@ class CursorConverter(BaseCursorConverter):
             for alias in linux_names[1:]:
                 link = cursors_dir / alias
                 if not link.exists():
-                    link.symlink_to(primary_name)
+                    if platform.system() == "Windows":
+                        shutil.copy2(out_file, link)
+                    else:
+                        link.symlink_to(primary_name)
 
     def _resolve_win2xcur_command(self) -> list[str]:
         resolved = shutil.which(self.win2xcur_bin)
