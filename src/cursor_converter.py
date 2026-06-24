@@ -1,5 +1,6 @@
 # cursor_converter.py
 
+import sys
 import os
 import platform
 import re
@@ -171,6 +172,10 @@ class BaseCursorConverter:
     @staticmethod
     def is_imagemagick_supported() -> bool:
         """Returns True if ImageMagick >= 7.0 is available."""
+        import sys
+        if getattr(sys, 'frozen', False) and platform.system() == "Windows":
+            return True  # The PyInstaller build bundles wand + libMagickWand DLLs natively
+        
         version = BaseCursorConverter.get_imagemagick_version()
         return version is not None and version >= (7, 0, 0)
 
@@ -424,15 +429,14 @@ class CursorConverter(BaseCursorConverter):
                         link.symlink_to(primary_name)
 
     def _resolve_win2xcur_command(self) -> list[str]:
+        if sys.platform == "win32" and getattr(sys, "frozen", False):
+            return [sys.executable, "win2xcur"]
         resolved = shutil.which(self.win2xcur_bin)
-        if resolved:
-            return [resolved]
-        for candidate in self._candidate_paths():
-            if Path(candidate).is_file():
-                return [candidate]
-        raise FileNotFoundError(
-            "win2xcur not found. Checked:\n" + "\n".join(self._candidate_paths())
-        )
+        if not resolved:
+            raise FileNotFoundError(
+                "win2xcur not found. Checked:\n" + "\n".join(self._candidate_paths())
+            )
+        return [resolved]
 
     def _candidate_paths(self) -> list[str]:
         path_dirs = [e for e in os.environ.get("PATH", "").split(":") if e]
@@ -529,15 +533,14 @@ class ReverseCursorConverter(BaseCursorConverter):
             return False
 
     def _resolve_x2wincurtheme_command(self) -> list[str]:
+        if sys.platform == "win32" and getattr(sys, "frozen", False):
+            return [sys.executable, "x2wincurtheme"]
         resolved = shutil.which(self.x2wincurtheme_bin)
-        if resolved:
-            return [resolved]
-        for candidate in self._candidate_paths():
-            if Path(candidate).is_file():
-                return [candidate]
-        raise FileNotFoundError(
-            "x2wincurtheme not found. Checked:\n" + "\n".join(self._candidate_paths())
-        )
+        if not resolved:
+            raise FileNotFoundError(
+                "x2wincurtheme not found. Checked:\n" + "\n".join(self._candidate_paths())
+            )
+        return [resolved]
 
     def _candidate_paths(self) -> list[str]:
         path_dirs = [e for e in os.environ.get("PATH", "").split(":") if e]

@@ -205,29 +205,136 @@ jobs:
             mingw-w64-x86_64-python-gobject
             mingw-w64-x86_64-libadwaita
             mingw-w64-x86_64-python-pip
+            mingw-w64-x86_64-python-numpy
+            mingw-w64-x86_64-imagemagick
             mingw-w64-x86_64-glib2
             zip
       - name: Install PyInstaller and dependencies
-        run: pip install pyinstaller win2xcur
+        run: |
+          pip install --break-system-packages pyinstaller
+          pip install --break-system-packages --no-deps win2xcur wand
       - name: Compile GSettings Schema
         run: glib-compile-schemas data/
       - name: Build with PyInstaller
         run: |
+          # Copy Adwaita icons
           mkdir -p package/share/icons
           cp -r /mingw64/share/icons/Adwaita package/share/icons/
-          mkdir -p package/share/glib-2.0/schemas
-          cp data/gschemas.compiled package/share/glib-2.0/schemas/
+
+          # Force update the MSYS2 schema cache with our latest schema so PyInstaller bundles the right one
+          # (MSYS2 is cached between Github Action runs, so an old schema was stuck there!)
+          cp data/io.github.eucaue.flexa.gschema.xml /mingw64/share/glib-2.0/schemas/
+          glib-compile-schemas /mingw64/share/glib-2.0/schemas/
+
+          # We must NOT rename libMagickCore/libMagickWand to CORE_RL_*!
+          # If we rename them, ImageMagick's own coders (like png.dll) break because they are compiled
+          # by MSYS2 to look for 'libMagickCore-7.Q16HDRI-10.dll'.
+          # Instead, we tell wand to look for the MSYS2 specific suffix!
+          
+          # We must copy them locally first because PyInstaller chokes on absolute MSYS2 paths (/mingw64/...)
+          cp /mingw64/bin/libMagickWand-7.Q16HDRI-10.dll .
+          cp /mingw64/bin/libMagickCore-7.Q16HDRI-10.dll .
+
+          # Copy ImageMagick modules and config so wand can read PNGs and parse colors
+          mkdir -p package/coders
+          mkdir -p package/magick_config
+          cp -r /mingw64/lib/ImageMagick-*/modules-*/coders/*.dll package/coders/ 2>/dev/null || true
+          cp -r /mingw64/etc/ImageMagick-*/* package/magick_config/ 2>/dev/null || true
+
+          # Copy typelibs PyInstaller misses
+          TYPELIB_DIR=/mingw64/lib/girepository-1.0
+          mkdir -p package/gi_typelibs
+          for tl in Gtk-4.0 Gdk-4.0 Gsk-4.0 GdkPixbuf-2.0 Pango-1.0 \
+                    PangoCairo-1.0 Graphene-1.0 cairo-1.0 HarfBuzz-0.0; do
+            cp "$TYPELIB_DIR/$tl.typelib" package/gi_typelibs/ 2>/dev/null || true
+          done
+
+          # Compile UI resources
+          glib-compile-resources --sourcedir=src src/flexa.gresource.xml --target=package/share/flexa.gresource
+
+          # PyInstaller runs the entry point as __main__ (no package),
+          # so relative imports in main.py fail. Create a wrapper that imports
+          # src as a package, matching how flexa.in works.
+          cat > flexa_launcher.py << 'LAUNCHER'
+          import sys, os
+          from gi.repository import Gio
+          
+          base_dir = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+
+          # Force GSettings to use our bundled schema to avoid old schema crashes
+          os.environ['GSETTINGS_SCHEMA_DIR'] = os.path.join(base_dir, 'share', 'glib-2.0', 'schemas')
+          
+          # Set up ImageMagick natively inside the unified environment
+          os.environ['MAGICK_HOME'] = base_dir
+          os.environ['MAGICK_CODER_MODULE_PATH'] = os.path.join(base_dir, 'coders')
+          os.environ['MAGICK_CONFIGURE_PATH'] = os.path.join(base_dir, 'magick_config')
+          os.environ['WAND_MAGICK_LIBRARY_SUFFIX'] = '-7.Q16HDRI-10'
+          
+          # Route CLI tools natively inside the same process to eliminate DLL issues
+          if len(sys.argv) > 1 and sys.argv[1] == 'win2xcur':
+              from win2xcur.main.win2xcur import main
+              sys.argv.pop(0)
+              sys.exit(main())
+          elif len(sys.argv) > 1 and sys.argv[1] == 'x2wincurtheme':
+              from win2xcur.main.x2wincurtheme import main
+              sys.argv.pop(0)
+              sys.exit(main())
+
+          # Register GResource for GTK templates
+          resource = Gio.Resource.load(os.path.join(base_dir, 'share', 'flexa.gresource'))
+          resource._register()
+
+          # Make src/ importable as a package
+          sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+          from src.main import main
+          main("dev")
+          LAUNCHER
+
           pyinstaller --noconfirm --onedir --windowed \
-            --add-data "src/window.ui;src" \
-            --add-data "src/preferences-dialog.ui;src" \
-            --add-data "src/shortcuts-dialog.ui;src" \
+            --name flexa \
+            --add-binary "libMagickWand-7.Q16HDRI-10.dll;." \
+            --add-binary "libMagickCore-7.Q16HDRI-10.dll;." \
+            --add-binary "package/coders/*.dll;coders" \
+            --add-data "package/magick_config;magick_config" \
+            --add-data "src;src" \
+            --add-data "package/share/flexa.gresource;share" \
             --add-data "data/io.github.eucaue.flexa.gschema.xml;data" \
-            src/main.py
-          cp -r package/share dist/main/
+            --add-data "package/gi_typelibs;gi_typelibs" \
+            --hidden-import gi \
+            --hidden-import gi.repository.Gtk \
+            --hidden-import gi.repository.Gdk \
+            --hidden-import gi.repository.Adw \
+            --hidden-import gi.repository.Gio \
+            --hidden-import gi.repository.GLib \
+            --hidden-import gi.repository.GObject \
+            --hidden-import gi.repository.GdkPixbuf \
+            --hidden-import gi.repository.Pango \
+            --hidden-import gi.repository.Graphene \
+            --hidden-import gi.overrides.Gtk \
+            --hidden-import gi.overrides.Gdk \
+            --hidden-import gi.overrides.Gio \
+            --hidden-import gi.overrides.GLib \
+            --hidden-import gi.overrides.GObject \
+            --hidden-import gi.overrides.Pango \
+            --hidden-import gi.overrides.GdkPixbuf \
+            --hidden-import numpy \
+            --hidden-import wand \
+            --hidden-import wand.image \
+            --hidden-import wand.color \
+            --hidden-import win2xcur.main.win2xcur \
+            --hidden-import win2xcur.main.x2wincurtheme \
+            --hidden-import src.main \
+            --hidden-import src.cursor_converter \
+            --hidden-import src.preferences \
+            --hidden-import src.window \
+            flexa_launcher.py
+
+          # Copy bundled resources into the final distribution
+          cp -r package/share dist/flexa/
       - name: Zip Release
         run: |
           cd dist
-          zip -r flexa-windows.zip main/
+          zip -r flexa-windows.zip flexa/
       - name: Upload Windows artifact
         if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4

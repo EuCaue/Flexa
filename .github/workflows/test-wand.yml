@@ -1,0 +1,79 @@
+name: Debug Wand
+on: workflow_dispatch
+jobs:
+  debug:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-python mingw-w64-x86_64-imagemagick mingw-w64-x86_64-python-pip
+      - run: |
+          pip install --break-system-packages pyinstaller wand 
+          cat > test.py << 'PY'
+          import os, sys
+          from wand.image import Image
+          from wand.color import Color
+          print("Wand loaded")
+          try:
+              with Image(width=10, height=10, background=Color("red")) as img:
+                  img.format = 'png'
+                  blob = img.make_blob()
+                  print("PNG blob generated successfully!")
+          except Exception as e:
+              print("Error:", e)
+          PY
+          
+          # Test uncompiled
+          echo "=== UNCOMPILED ==="
+          python test.py
+
+          # Test compiled
+          echo "=== COMPILED ==="
+          WAND_DLL=$(basename /mingw64/bin/libMagickWand-7.Q16HDRI-*.dll | head -n 1)
+          CORE_DLL=$(basename /mingw64/bin/libMagickCore-7.Q16HDRI-*.dll | head -n 1)
+          SUFFIX=${WAND_DLL#libMagickWand}
+          SUFFIX=${SUFFIX%.dll}
+          
+          cp "/mingw64/bin/$WAND_DLL" .
+          cp "/mingw64/bin/$CORE_DLL" .
+          
+          mkdir -p package/coders
+          cp /mingw64/lib/ImageMagick-*/modules-*/coders/*.dll package/coders/ 2>/dev/null || true
+          cp /mingw64/lib/ImageMagick-*/modules-*/coders/*.la package/coders/ 2>/dev/null || true
+          mkdir -p package/magick_config
+          cp -r /mingw64/etc/ImageMagick-*/* package/magick_config/ 2>/dev/null || true
+
+          cat > launcher.py << LAUNCHER
+          import sys, os
+          base_dir = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+          os.environ['MAGICK_HOME'] = base_dir
+          os.environ['MAGICK_CODER_MODULE_PATH'] = base_dir
+          os.environ['MAGICK_CONFIGURE_PATH'] = os.path.join(base_dir, 'magick_config')
+          os.environ['WAND_MAGICK_LIBRARY_SUFFIX'] = '$SUFFIX'
+          
+          # Enable debug mode to see module loading errors
+          os.environ['MAGICK_DEBUG'] = 'module'
+          
+          import test
+          LAUNCHER
+
+          pyinstaller --noconfirm --onedir \
+            --name test_app \
+            --add-binary "$WAND_DLL;." \
+            --add-binary "$CORE_DLL;." \
+            --add-binary "package/coders/*.dll;." \
+            --add-data "package/coders/*.la;." \
+            --add-data "package/magick_config;magick_config" \
+            --hidden-import wand \
+            --hidden-import wand.image \
+            --hidden-import wand.color \
+            launcher.py
+            
+          cd dist/test_app
+          ./test_app.exe
