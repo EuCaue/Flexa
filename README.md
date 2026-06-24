@@ -82,6 +82,10 @@ flatpak install flathub io.github.eucaue.flexa
 
 Download the assets from the [latest release](https://github.com/eucaue/flexa/releases/latest).
 
+**Windows:**
+
+Download `flexa-windows.zip`, extract the folder, and run `flexa.exe`.
+
 **Flatpak:**
 
 ```sh
