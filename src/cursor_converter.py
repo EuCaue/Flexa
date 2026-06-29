@@ -404,6 +404,9 @@ class CursorConverter(BaseCursorConverter):
                 launcher = Gio.SubprocessLauncher.new(
                     Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
                 )
+                launcher.set_environ(
+                    [f"{k}={v}" for k, v in os.environ.items()]
+                )
                 proc = launcher.spawnv([*win2xcur_cmd, str(src_file), "-o", temp_dir])
 
                 ok, _stdout, stderr_bytes = proc.communicate(None, cancellable)
@@ -595,10 +598,29 @@ class ReverseCursorConverter(BaseCursorConverter):
         theme_name: str,
         cancellable: Gio.Cancellable | None,
     ) -> None:
+        import sys
+
+        if sys.platform == "win32" and getattr(sys, "frozen", False):
+            # No frozen Windows build, call x2wincurtheme directly in-process
+            # to avoid launching a subprocess that lacks add_dll_directory setup.
+            from win2xcur.main.x2wincurtheme import main as x2wincurtheme_main
+            old_argv = sys.argv
+            try:
+                sys.argv = ["x2wincurtheme", "-n", theme_name, "-o", str(out_dir), str(theme_dir)]
+                ret = x2wincurtheme_main()
+                if ret and ret != 0:
+                    raise RuntimeError(f"x2wincurtheme failed with exit code {ret}")
+            finally:
+                sys.argv = old_argv
+            return
+
         x2wincurtheme_cmd = self._resolve_x2wincurtheme_command()
 
         launcher = Gio.SubprocessLauncher.new(
             Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+        )
+        launcher.set_environ(
+            [f"{k}={v}" for k, v in os.environ.items()]
         )
         proc = launcher.spawnv(
             [*x2wincurtheme_cmd, "-n", theme_name, "-o", str(out_dir), str(theme_dir)]
