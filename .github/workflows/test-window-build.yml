@@ -173,13 +173,13 @@ jobs:
             --hidden-import src.window \
             flexa_launcher.py
             
-      - name: Zip Release
+      - name: Build Inno Setup Installer
+        shell: pwsh
         run: |
-          cd dist
-          zip -r flexa-windows.zip flexa/
+          iscc flexa.iss
           
-      - name: Upload Windows artifact
+      - name: Upload Windows Installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: flexa-windows
-          path: dist/flexa-windows.zip
+          name: flexa-windows-installer
+          path: dist/Flexa-Windows-Installer.exe
