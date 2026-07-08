@@ -328,7 +328,7 @@ class FlexaApplication(Adw.Application):
 
         spinner = Gtk.Spinner(spinning=False)
 
-        check = Gtk.Image(icon_name="emblem-ok-symbolic")
+        check = Gtk.Image(icon_name="object-select-symbolic")
         check.add_css_class("success")
 
         error = Gtk.Image(icon_name="dialog-error-symbolic")

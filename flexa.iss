@@ -17,8 +17,8 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 
 ; Configurações de Ícone (se tiver um .ico, descomente a linha abaixo)
-; SetupIconFile=data\icons\flexa.ico
-; UninstallDisplayIcon={app}\flexa.exe
+SetupIconFile=data\icons\flexa.ico
+UninstallDisplayIcon={app}\flexa.exe
 
 ; Privilégios (lowest = instala apenas para o usuário atual, admin = para todos os usuários)
 PrivilegesRequired=lowest

@@ -137,8 +137,9 @@ jobs:
           main("dev")
           LAUNCHER
 
-          pyinstaller --noconfirm --onedir \
+          pyinstaller --noconfirm --onedir --noconsole \
             --name flexa \
+            --icon "data/icons/flexa.ico" \
             --add-data "package/imagemagick;imagemagick" \
             --add-data "src;src" \
             --add-data "data/io.github.eucaue.flexa.gschema.xml;data" \
