@@ -84,7 +84,7 @@ Download the assets from the [latest release](https://github.com/eucaue/flexa/re
 
 **Windows:**
 
-Download `flexa-windows.zip`, extract the folder, and run `flexa.exe`.
+Download `Flexa-Windows-Installer.exe` and run it to install the application.
 
 **Flatpak:**
 
