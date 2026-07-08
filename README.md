@@ -183,7 +183,7 @@ You can change the output directories in **Preferences**.
 
 ### Output
 
-Each theme is saved as its own subfolder (named after the source folder) inside your configured output directory (`~/.local/share/icons` for Linux and `~/Cursors` for Windows by default).
+Each theme is saved as its own subfolder (named after the source folder) inside your configured output directory. By default, this is `~/.local/share/icons` (when converting to Linux) and `~/Documents/Windows Cursors` (when converting to Windows). These defaults intelligently adapt if you are running the app on Windows to avoid confusion.
 
 ## Contributing
 

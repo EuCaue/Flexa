@@ -1,3 +1,4 @@
+import os
 from gi.repository import Adw, Gio, GLib, Gtk
 
 
@@ -50,13 +51,19 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
             "output-dir", self.output_dir_row, "text", Gio.SettingsBindFlags.DEFAULT
         )
         if self.settings.get_string("output-dir") == "":
-            self.output_dir_row.set_text("~/.local/share/icons")
+            if os.name == "nt":
+                self.output_dir_row.set_text("~\\Documents\\Linux Cursors")
+            else:
+                self.output_dir_row.set_text("~/.local/share/icons")
 
         self.settings.bind(
             "output-dir-windows", self.output_dir_windows_row, "text", Gio.SettingsBindFlags.DEFAULT
         )
         if self.settings.get_string("output-dir-windows") == "":
-            self.output_dir_windows_row.set_text("~/Cursors")
+            if os.name == "nt":
+                self.output_dir_windows_row.set_text("~\\Documents\\Windows Cursors")
+            else:
+                self.output_dir_windows_row.set_text("~/Documents/Windows Cursors")
 
         self.btn_browse_output.connect("clicked", self._on_select_folders)
         self.btn_browse_output_windows.connect("clicked", self._on_select_folders_windows)
