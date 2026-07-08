@@ -26,6 +26,7 @@ jobs:
             mingw-w64-x86_64-python-pip
             mingw-w64-x86_64-python-numpy
             mingw-w64-x86_64-glib2
+            mingw-w64-x86_64-imagemagick
             zip
             p7zip
             jq
@@ -65,6 +66,9 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
+          mkdir -p data/icons
+          magick -background none data/icons/hicolor/scalable/apps/io.github.eucaue.flexa.svg -define icon:auto-resize=16,32,48,64,256 data/icons/flexa.ico
+
           mkdir -p package/share/icons
           cp -r /mingw64/share/icons/Adwaita package/share/icons/
 
@@ -174,10 +178,17 @@ jobs:
             --hidden-import src.window \
             flexa_launcher.py
             
+      - name: Extract Version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(grep -oP "(?<=version:\s')[^']*" meson.build | head -1)
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Build Inno Setup Installer
         shell: pwsh
         run: |
-          iscc flexa.iss
+          iscc "/dAppVersion=$env:APP_VERSION" flexa.iss
           
       - name: Upload Windows Installer artifact
         uses: actions/upload-artifact@v4

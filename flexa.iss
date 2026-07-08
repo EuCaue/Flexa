@@ -1,7 +1,7 @@
 [Setup]
 ; Identificadores do App
 AppName=Flexa
-AppVersion=1.0.0
+AppVersion={#AppVersion}
 AppPublisher=Cauê
 AppPublisherURL=https://github.com/eucaue/flexa
 AppSupportURL=https://github.com/eucaue/flexa/issues
