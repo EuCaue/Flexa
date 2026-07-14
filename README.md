@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/GTK-4.10+-blue" alt="GTK" />
 </a>
 <a href="#">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.2.0-blue" alt="Version" />
 </a>
 <a href="#">
   <img src="https://img.shields.io/badge/python-3.11+-blue" alt="Python" />
@@ -98,6 +98,12 @@ flatpak install flexa.flatpak
 sudo dnf install ./python3-win2xcur-*.rpm ./flexa-*.rpm
 ```
 
+**DEB (Ubuntu/Debian):**
+
+```sh
+sudo apt install ./python3-win2xcur_*.deb ./flexa_*.deb
+```
+
 ### Building with Flatpak
 
 If you have `flatpak-builder` installed, this is the recommended way to build.
@@ -128,8 +134,6 @@ flatpak run io.github.eucaue.flexa
 ```
 
 </details>
-
-### Building from source
 
 ## Requirements
 
