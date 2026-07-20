@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/LibAdwaita-1.5+-blue" alt="LibAdwaita" />
 </a>
 <br><br>
-<p>A GNOME app to convert cursor themes between Windows and Linux formats.</p>
+<p>Convert cursor themes between Windows and Linux.</p>
 
 </div>
 
@@ -39,17 +39,17 @@
 
 ### Installing win2xcur
 
-Flexa requires the `win2xcur` Python package (which provides both `win2xcur` and `x2wincurtheme` command-line tools) to convert cursor files.
+Flexa requires the `win2xcur` Python package to convert cursor files.
 
-> **Note:** `win2xcur` requires [ImageMagick >= 7.0](https://imagemagick.org/script/download.php) for full cursor format support. If your system has an older version, some cursor files may fail to convert.
+`win2xcur` requires [ImageMagick >= 7.0](https://imagemagick.org/script/download.php) for full cursor format support. Older versions may fail on some cursors.
 
-**Using pipx (Recommended):**
+**pipx:**
 
 ```sh
 pipx install win2xcur
 ```
 
-**Using pip:**
+**pip:**
 
 ```sh
 pip install --user win2xcur
@@ -106,8 +106,6 @@ sudo apt install ./python3-win2xcur_*.deb ./flexa_*.deb
 
 ### Building with Flatpak
 
-If you have `flatpak-builder` installed, this is the recommended way to build.
-
 1. Install the GNOME SDK and Platform:
 
 ```sh
@@ -117,7 +115,7 @@ flatpak install flathub org.gnome.Sdk//50 org.gnome.Platform//50
 2. Build and run:
 
 <details>
-<summary>Using <a href="https://just.systems"><code>just</code></a> (Recommended)</summary>
+<summary>Using <a href="https://just.systems"><code>just</code></a></summary>
 
 ```sh
 just build-run
@@ -156,7 +154,7 @@ sudo apt install libgtk-4-dev libadwaita-1-dev libgirepository1.0-dev meson ninj
 Then build:
 
 <details>
-<summary>Using <a href="https://just.systems"><code>just</code></a> (Recommended)</summary>
+<summary>Using <a href="https://just.systems"><code>just</code></a></summary>
 
 ```sh
 just build-run-native
@@ -178,27 +176,22 @@ flexa
 
 ## Usage
 
-1. Select your target conversion mode via the top view switcher (To Linux / To Windows)
-2. Hit **+** or drag a cursor folder into the window
-3. Repeat for as many themes as you want
-4. Hit **Convert**, you'll get a toast when it's done with an **Open** shortcut to the output folder
-
-You can change the output directories in **Preferences**.
+Select the target mode (To Linux / To Windows), add cursor folders via **+** or drag-and-drop, then hit **Convert**. Output directories are configurable in **Preferences**.
 
 ### Output
 
-Each theme is saved as its own subfolder (named after the source folder) inside your configured output directory. By default, this is `~/.local/share/icons` (when converting to Linux) and `~/Documents/Windows Cursors` (when converting to Windows). These defaults intelligently adapt if you are running the app on Windows to avoid confusion.
+Each theme is saved as its own subfolder (named after the source folder) inside your configured output directory. By default, this is `~/.local/share/icons` (when converting to Linux) and `~/Documents/Windows Cursors` (when converting to Windows). Defaults adjust on Windows.
 
 ## Contributing
 
-Found a bug or want a feature? Open an issue or PR at [github.com/eucaue/flexa](https://github.com/eucaue/flexa/issues), contributions are welcome.
+Open an issue or PR at [github.com/eucaue/flexa](https://github.com/eucaue/flexa/issues).
 
 ## Acknowledgements
 
-Flexa is built on top of and inspired by these projects:
+Built with:
 
-- **[win2xcur](https://github.com/quantum5/win2xcur)**: does the actual conversion heavy lifting
-- **[win-cursor-2-linux](https://github.com/lmezar/win-cursor-2-linux)**: the script that sparked the idea
+- **[win2xcur](https://github.com/quantum5/win2xcur)**: Cursor conversion backend
+- **[win-cursor-2-linux](https://github.com/lmezar/win-cursor-2-linux)**: Original inspiration
 
 ## License
 
