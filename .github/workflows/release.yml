@@ -34,6 +34,8 @@ jobs:
           manifest-path: io.github.eucaue.flexa.json
           cache-key: flatpak-${{ github.sha }}
           branch: master
+          cache: ${{ !env.ACT }}
+          upload-artifact: ${{ !env.ACT }}
       - name: Upload Flatpak artifact
         if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4
