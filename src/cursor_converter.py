@@ -151,6 +151,25 @@ class BaseCursorConverter:
     _is_running: bool = field(default=False, init=False, repr=False)
 
     @staticmethod
+    def resolve_fallback_path(path: Path) -> Path:
+        expanded = path.expanduser()
+        if expanded.exists():
+            return expanded
+
+        value = str(expanded)
+        replacements = (
+            ("/usr/share/icons", "/run/host/share/icons"),
+            ("/usr/share/icons", "/run/host/usr/share/icons"),
+            ("/usr/local/share/icons", "/run/host/usr/local/share/icons"),
+        )
+        for system_path, sandbox_path in replacements:
+            if value == system_path or value.startswith(system_path + os.sep):
+                candidate = Path(sandbox_path + value[len(system_path):])
+                if candidate.exists():
+                    return candidate
+        return expanded
+
+    @staticmethod
     def get_imagemagick_version() -> tuple[int, int, int] | None:
         """Returns (major, minor, patch) or None if ImageMagick is not found."""
         commands = ("magick",) if platform.system() == "Windows" else ("magick", "convert")
@@ -329,6 +348,7 @@ class BaseCursorConverter:
 class CursorConverter(BaseCursorConverter):
     """Windows → Linux (win2xcur)"""
     win2xcur_bin: str = "win2xcur"
+    fallback_path: Path | None = None
 
     def is_win2xcur_available(self) -> bool:
         """Returns True if the win2xcur binary can be located on the system."""
@@ -358,6 +378,8 @@ class CursorConverter(BaseCursorConverter):
             cursors_dir.mkdir(parents=True, exist_ok=True)
             mapping = self._build_mapping(folder)
             self._run_win2xcur_sync(folder, cursors_dir, mapping, cancellable)
+            if self.fallback_path:
+                self._copy_missing_linux_cursors(self.fallback_path, cursors_dir)
             self._write_index_theme(out_theme, theme_name)
 
             result = ConversionResult(
@@ -456,6 +478,28 @@ class CursorConverter(BaseCursorConverter):
         inf = next((f for f in folder.iterdir() if f.suffix.lower() == ".inf"), None)
         return self._parse_inf(inf) if inf else self._map_by_filename(folder)
 
+    @staticmethod
+    def is_valid_fallback_path(path: Path) -> bool:
+        cursors_dir = path / "cursors" if (path / "cursors").is_dir() else path
+        return cursors_dir.is_dir() and any(
+            item.is_file() and not item.suffix for item in cursors_dir.iterdir()
+        )
+
+    def _copy_missing_linux_cursors(self, fallback_path: Path, cursors_dir: Path) -> None:
+        source_dir = (
+            fallback_path / "cursors" if (fallback_path / "cursors").is_dir() else fallback_path
+        )
+        source_root = source_dir.resolve()
+
+        for source in source_dir.iterdir():
+            if source.suffix or not source.is_file() or (cursors_dir / source.name).exists():
+                continue
+            try:
+                source.resolve().relative_to(source_root)
+            except ValueError:
+                continue
+            shutil.copy2(source, cursors_dir / source.name)
+
     def _parse_inf(self, inf: Path) -> dict[str, list[str]]:
         strings = self._parse_inf_strings(inf)
         mapping: dict[str, list[str]] = {}
@@ -527,6 +571,7 @@ class CursorConverter(BaseCursorConverter):
 class ReverseCursorConverter(BaseCursorConverter):
     """Linux → Windows (x2wincurtheme)"""
     x2wincurtheme_bin: str = "x2wincurtheme"
+    fallback_path: Path | None = None
 
     def is_x2wincurtheme_available(self) -> bool:
         try:
@@ -569,6 +614,8 @@ class ReverseCursorConverter(BaseCursorConverter):
             out_theme.mkdir(parents=True, exist_ok=True)
             theme_dir = self._resolve_theme_dir(folder)
             self._run_x2wincurtheme_sync(theme_dir, out_theme, theme_name, cancellable)
+            if self.fallback_path:
+                self._copy_missing_windows_cursors(self.fallback_path, out_theme)
 
             result = ConversionResult(
                 folder_name=theme_name,
@@ -590,6 +637,28 @@ class ReverseCursorConverter(BaseCursorConverter):
         if (folder / "cursors").is_dir():
             return folder / "cursors"
         return folder
+
+    @staticmethod
+    def is_valid_fallback_path(path: Path) -> bool:
+        return path.is_dir() and any(
+            item.is_file() and item.suffix.lower() in {".cur", ".ani"} for item in path.iterdir()
+        )
+
+    def _copy_missing_windows_cursors(self, fallback_path: Path, out_dir: Path) -> None:
+        source_root = fallback_path.resolve()
+        existing_names = {item.name.casefold() for item in out_dir.iterdir() if item.is_file()}
+
+        for source in fallback_path.iterdir():
+            if source.suffix.lower() not in {".cur", ".ani"} or not source.is_file():
+                continue
+            if source.name.casefold() in existing_names:
+                continue
+            try:
+                source.resolve().relative_to(source_root)
+            except ValueError:
+                continue
+            shutil.copy2(source, out_dir / source.name)
+            existing_names.add(source.name.casefold())
 
     def _run_x2wincurtheme_sync(
         self,

@@ -432,6 +432,7 @@ class FlexaApplication(Adw.Application):
                 self._show_win2xcur_missing_dialog()
                 return
             output_key = "output-dir"
+            fallback_key = "fallback-theme-path-linux"
         else:
             probe = ReverseCursorConverter(
                 output_dir=Path("~").expanduser(),
@@ -442,6 +443,23 @@ class FlexaApplication(Adw.Application):
                 self._show_x2wincurtheme_missing_dialog()
                 return
             output_key = "output-dir-windows"
+            fallback_key = "fallback-theme-path-windows"
+
+        fallback_value = self.settings.get_string(fallback_key)
+        fallback_path = (
+            BaseCursorConverter.resolve_fallback_path(Path(fallback_value))
+            if fallback_value
+            else None
+        )
+        if fallback_path:
+            is_valid_fallback = (
+                CursorConverter.is_valid_fallback_path(fallback_path)
+                if mode == ConversionMode.TO_LINUX
+                else ReverseCursorConverter.is_valid_fallback_path(fallback_path)
+            )
+            if not is_valid_fallback:
+                self._show_invalid_fallback_dialog(fallback_path)
+                return
 
         btn.set_sensitive(False)
         self.window.btn_add.set_sensitive(False)
@@ -454,17 +472,31 @@ class FlexaApplication(Adw.Application):
                 output_dir=output_dir,
                 on_progress=self._on_conversion_progress,
                 on_all_done=lambda results: self._show_done_toast(results, mode),
+                fallback_path=fallback_path,
             )
         else:
             converter = ReverseCursorConverter(
                 output_dir=output_dir,
                 on_progress=self._on_conversion_progress,
                 on_all_done=lambda results: self._show_done_toast(results, mode),
+                fallback_path=fallback_path,
             )
 
         self.converters[mode] = converter
         converter.add_many([Path(f.folder_path) for f in self.folder_rows[mode]])
         converter.start()
+
+    def _show_invalid_fallback_dialog(self, fallback_path: Path):
+        dialog = Adw.AlertDialog(
+            heading=_("Fallback unavailable"),
+            body=_(
+                "Selected folder is unavailable or has no compatible cursors."
+            )
+            + f"\n\n{fallback_path}",
+        )
+        dialog.add_response("close", _("Close"))
+        dialog.set_default_response("close")
+        dialog.present(self.window)
 
     def _show_x2wincurtheme_missing_dialog(self):
         dialog = Adw.AlertDialog(

@@ -4,6 +4,8 @@
   <requires lib="Adw" version="1.0"/>
   <template class="FlexaPreferencesDialog" parent="AdwPreferencesDialog">
     <property name="title" translatable="yes">Preferences</property>
+    <property name="content-width">520</property>
+    <property name="content-height">520</property>
     <child>
       <object class="AdwPreferencesPage">
         <property name="title" translatable="yes">General</property>
@@ -39,6 +41,52 @@
                   <object class="GtkButton" id="btn_browse_output_windows">
                     <property name="icon-name">folder-open-symbolic</property>
                     <property name="tooltip-text" translatable="yes">Browse…</property>
+                    <property name="valign">center</property>
+                    <property name="cursor">
+                      <object class="GdkCursor">
+                        <property name="name">pointer</property>
+                      </object>
+                    </property>
+                    <style>
+                      <class name="flat"/>
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Fallback</property>
+            <property name="description" translatable="yes">Fill missing cursors from another folder.</property>
+            <child>
+              <object class="AdwComboRow" id="fallback_linux_row">
+                <property name="title" translatable="yes">To Linux</property>
+                <child type="suffix">
+                  <object class="GtkButton" id="btn_browse_fallback_linux">
+                    <property name="icon-name">folder-open-symbolic</property>
+                    <property name="tooltip-text" translatable="yes">Select a folder with cursor themes to fill this list</property>
+                    <property name="valign">center</property>
+                    <property name="cursor">
+                      <object class="GdkCursor">
+                        <property name="name">pointer</property>
+                      </object>
+                    </property>
+                    <style>
+                      <class name="flat"/>
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="AdwComboRow" id="fallback_windows_row">
+                <property name="title" translatable="yes">To Windows</property>
+                <child type="suffix">
+                  <object class="GtkButton" id="btn_browse_fallback_windows">
+                    <property name="icon-name">folder-open-symbolic</property>
+                    <property name="tooltip-text" translatable="yes">Select a folder with cursor themes to fill this list</property>
                     <property name="valign">center</property>
                     <property name="cursor">
                       <object class="GdkCursor">

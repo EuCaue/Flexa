@@ -1,77 +1,312 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the flexa package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: flexa\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-27 19:15-0300\n"
+"POT-Creation-Date: 2026-08-17 22:29-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/main.py:63
+#: data/io.github.eucaue.flexa.desktop.in:2
+#: data/io.github.eucaue.flexa.metainfo.xml.in:7 src/window.ui:6
+msgid "Flexa"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.desktop.in:3
+msgid "Cursor Theme Converter"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.desktop.in:4
+#: data/io.github.eucaue.flexa.metainfo.xml.in:8
+msgid "Convert cursor themes between Windows and Linux formats"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.desktop.in:10
+msgid "cursor;theme;convert;windows;linux;mouse;pointer;"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:10
+msgid ""
+"Flexa is a GNOME application that converts cursor themes between Windows "
+"(.cur and .ani files) and Linux XCursor formats. It provides a clean, "
+"intuitive interface following the GNOME Human Interface Guidelines."
+msgstr ""
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:16
+msgid ""
+"Add multiple cursor folders at once — either through the file picker or by "
+"dragging and dropping them into the window. Flexa will scan each folder for "
+"cursors and convert them all with a single click. When done, a toast "
+"notification lets you open the output directory instantly."
+msgstr ""
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:23
+msgid ""
+"The output directory is configurable in Preferences and defaults to ~/.local/"
+"share/icons, so converted themes are immediately available in GNOME Settings "
+"→ Appearance."
+msgstr ""
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:31
+msgid "caue"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:53
+msgid "Main window with cursor folders added"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:6
+msgid "Output Directory"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:7
+msgid "Directory where converted cursors are saved."
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:11
+msgid "Windows Output Directory"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:12
+msgid "Directory where converted Windows cursors are saved."
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:16
+msgid "Linux Fallback Cursor Theme"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:17
+msgid "Cursor theme folder used to fill missing Linux cursors."
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:21
+msgid "Windows Fallback Cursor Theme"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:22
+msgid "Cursor folder used to fill missing Windows cursors."
+msgstr ""
+
+#: src/main.py:81 src/main.py:86
 msgid "No Folders Added"
 msgstr ""
 
-#: src/main.py:64
+#: src/main.py:82 src/main.py:87
 msgid "Drag folders here or click the button below"
 msgstr ""
 
-#. Translators: Replace "translator-credits" with your name/username, and optionally an email or URL.
-#: src/main.py:113
-msgid "translator-credits"
+#: src/main.py:165
+msgid "A GNOME app to convert cursor themes between Windows and Linux formats."
 msgstr ""
 
-#: src/main.py:211
-msgid "No cursor files found"
+#: src/main.py:168
+msgid "EuCaue"
 msgstr ""
 
-#: src/main.py:212
+#: src/main.py:172
+msgid "Donate"
+msgstr ""
+
+#: src/main.py:173
+msgid "Quick Lofi"
+msgstr ""
+
+#: src/main.py:191
+msgid "Select Windows cursor folders"
+msgstr ""
+
+#: src/main.py:193
+msgid "Select Linux cursor theme folders"
+msgstr ""
+
+#: src/main.py:297
 msgid "Expected *.cur, *.ani or install.inf inside the folder."
 msgstr ""
 
-#: src/main.py:227
+#: src/main.py:299
+msgid "Expected a 'cursors' subdirectory or Xcursor files inside the folder."
+msgstr ""
+
+#: src/main.py:302
+msgid "No cursor files found"
+msgstr ""
+
+#: src/main.py:305
+msgid "OK"
+msgstr ""
+
+#: src/main.py:318
 msgid "Remove"
 msgstr ""
 
-#: src/main.py:352
-msgid "Conversion completed"
+#: src/main.py:491
+msgid "Fallback unavailable"
 msgstr ""
 
-#: src/main.py:354
-msgid "Open"
+#: src/main.py:493
+msgid "Selected folder is unavailable or has no compatible cursors."
 msgstr ""
 
-#: src/main.py:357
-msgid "Convert"
+#: src/main.py:497 src/main.py:512 src/main.py:530 src/main.py:551
+msgid "Close"
 msgstr ""
 
-#: src/main.py:394
-msgid "Converted {done} of {total} cursor theme{plural}"
+#: src/main.py:503
+msgid "x2wincurtheme Not Found"
 msgstr ""
 
-#: src/main.py:398
-msgid "Converted {done} of {total} cursor theme{plural}; {failed} failed"
+#: src/main.py:505
+msgid ""
+"Flexa requires <b>x2wincurtheme</b> to convert Linux cursors to Windows, but "
+"it could not be found on your system.\n"
+"\n"
+"It is included in the <b>win2xcur</b> package. Install with:\n"
+"<tt>pip install win2xcur</tt>"
 msgstr ""
 
-#: src/main.py:406
+#: src/main.py:513 src/main.py:531
+msgid "Open win2xcur page"
+msgstr ""
+
+#: src/main.py:521
+msgid "win2xcur Not Found"
+msgstr ""
+
+#: src/main.py:523
+msgid ""
+"Flexa requires <b>win2xcur</b> to convert cursor files, but it could not be "
+"found on your system.\n"
+"\n"
+"Install it with:\n"
+"<tt>pip install win2xcur</tt>"
+msgstr ""
+
+#: src/main.py:544
 msgid "ImageMagick 7.0 Required"
 msgstr ""
 
-#: src/main.py:407
+#: src/main.py:546
 msgid ""
 "win2xcur needs <b>ImageMagick 7.0</b> or newer to convert cursor files.\n"
+"\n"
 "Install ImageMagick 7.0+ and restart Flexa."
 msgstr ""
 
-#: src/main.py:421
+#: src/main.py:552
 msgid "Download ImageMagick"
+msgstr ""
+
+#: src/main.py:584 src/window.ui:85 src/window.ui:138
+msgid "Convert"
+msgstr ""
+
+#: src/main.py:600
+#, python-brace-format
+msgid "Converted {done} of {total} cursor theme{plural}"
+msgstr ""
+
+#: src/main.py:605
+#, python-brace-format
+msgid "Converted {done} of {total} cursor theme{plural}; {failed} failed"
+msgstr ""
+
+#: src/main.py:609
+msgid "Open"
+msgstr ""
+
+#: src/preferences-dialog.ui:6
+msgid "Preferences"
+msgstr ""
+
+#: src/preferences-dialog.ui:9
+msgid "General"
+msgstr ""
+
+#: src/preferences-dialog.ui:13
+msgid "Output"
+msgstr ""
+
+#: src/preferences-dialog.ui:14
+msgid "Configure the conversion output directories"
+msgstr ""
+
+#: src/preferences-dialog.ui:17
+msgid "To Linux Directory"
+msgstr ""
+
+#: src/preferences-dialog.ui:21 src/preferences-dialog.ui:41
+msgid "Browse…"
+msgstr ""
+
+#: src/preferences-dialog.ui:37
+msgid "To Windows Directory"
+msgstr ""
+
+#: src/preferences-dialog.ui:59
+msgid "Fallback"
+msgstr ""
+
+#: src/preferences-dialog.ui:60
+msgid "Fill missing cursors from another folder."
+msgstr ""
+
+#: src/preferences-dialog.ui:63 src/window.ui:56
+msgid "To Linux"
+msgstr ""
+
+#: src/preferences-dialog.ui:68 src/window.ui:109
+msgid "To Windows"
+msgstr ""
+
+#: src/preferences.py:121
+msgid "None"
+msgstr ""
+
+#: src/preferences.py:125
+#, python-brace-format
+msgid "Unavailable: {path}"
+msgstr ""
+
+#: src/shortcuts-dialog.ui:6
+msgid "Shortcuts"
+msgstr ""
+
+#: src/shortcuts-dialog.ui:9
+msgctxt "shortcut window"
+msgid "Show Shortcuts"
+msgstr ""
+
+#: src/shortcuts-dialog.ui:15
+msgctxt "shortcut window"
+msgid "Quit"
+msgstr ""
+
+#: src/window.ui:26
+msgid "Add cursor folder"
+msgstr ""
+
+#: src/window.ui:44
+msgid "Main Menu"
+msgstr ""
+
+#: src/window.ui:177
+msgid "_Preferences"
+msgstr ""
+
+#: src/window.ui:181
+msgid "_Keyboard Shortcuts"
+msgstr ""
+
+#: src/window.ui:185
+msgid "_About Flexa"
 msgstr ""

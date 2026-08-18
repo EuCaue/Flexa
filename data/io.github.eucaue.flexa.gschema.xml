@@ -11,5 +11,25 @@
 			<summary>Windows Output Directory</summary>
 			<description>Directory where converted Windows cursors are saved.</description>
 		</key>
+		<key name="fallback-theme-path-linux" type="s">
+			<default>''</default>
+			<summary>Linux Fallback Cursor Theme</summary>
+			<description>Cursor theme folder used to fill missing Linux cursors.</description>
+		</key>
+		<key name="fallback-theme-path-windows" type="s">
+			<default>''</default>
+			<summary>Windows Fallback Cursor Theme</summary>
+			<description>Cursor folder used to fill missing Windows cursors.</description>
+		</key>
+		<key name="fallback-root-linux" type="s">
+			<default>''</default>
+			<summary>Custom Linux Fallback Root</summary>
+			<description>Root folder scanned for Linux cursor themes to fill missing cursors.</description>
+		</key>
+		<key name="fallback-root-windows" type="s">
+			<default>''</default>
+			<summary>Custom Windows Fallback Root</summary>
+			<description>Root folder scanned for Windows cursor folders to fill missing cursors.</description>
+		</key>
 	</schema>
 </schemalist>
