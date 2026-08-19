@@ -1,14 +1,24 @@
+# preferences.py
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import os
 import platform
+import threading
 from gettext import gettext as _
 from pathlib import Path
-from typing import cast
+from typing import Callable, cast
 
-from gi.repository import Adw, Gio, GLib, Gtk
+from gi.repository import Adw, Gio, GLib, GObject, Gtk
+
+from .cursor_converter import SANDBOX_PATH_REPLACEMENTS
+from .debug import debug
 
 
 @Gtk.Template(resource_path="/io/github/eucaue/flexa/preferences-dialog.ui")
 class FlexaPreferencesDialog(Adw.PreferencesDialog):
+    """Preferences dialog for Flexa configuration."""
+
     __gtype_name__ = "FlexaPreferencesDialog"
 
     output_dir_row: Adw.EntryRow = Gtk.Template.Child()
@@ -21,37 +31,25 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
     btn_browse_fallback_linux: Gtk.Button = Gtk.Template.Child()
     btn_browse_fallback_windows: Gtk.Button = Gtk.Template.Child()
 
-    def _on_select_folders(self, widget):
+    def _select_output_folder(self, target_row: Adw.EntryRow) -> None:
         dialog = Gtk.FileDialog()
-        dialog.select_folder(parent=self.get_root(), callback=self._on_folder_selected)
+        parent = cast(Gtk.Window | None, self.get_root())
 
-    def _on_select_folders_windows(self, widget):
-        dialog = Gtk.FileDialog()
-        dialog.select_folder(parent=self.get_root(), callback=self._on_folder_selected_windows)
+        def _on_finish(dialog: Gtk.FileDialog, result: Gio.AsyncResult) -> None:
+            try:
+                folder = dialog.select_folder_finish(result)
+                if folder:
+                    path = folder.get_path()
+                    if path:
+                        parsed_path = self._parse_home_folder(path)
+                        target_row.set_text(parsed_path)
+            except GLib.GError as err:
+                debug(f"Folder selection error: {err}")
 
-    def _on_folder_selected(self, dialog, result):
-        try:
-            folder = dialog.select_folder_finish(result)
-            path = folder.get_path()
-            parsed_path = self._parse_home_folder(path)
-            self.output_dir_row.set_text(parsed_path)
-        except GLib.GError:
-            pass
+        dialog.select_folder(parent=parent, callback=_on_finish)
 
-    def _on_folder_selected_windows(self, dialog, result):
-        try:
-            folder = dialog.select_folder_finish(result)
-            path = folder.get_path()
-            parsed_path = self._parse_home_folder(path)
-            self.output_dir_windows_row.set_text(parsed_path)
-        except GLib.GError:
-            pass
-
-    def _parse_home_folder(self, path) -> str:
+    def _parse_home_folder(self, path: str) -> str:
         return path.replace(GLib.get_home_dir(), "~", 1)
-
-    def _handle_default(self):
-        self.output_dir_row.set_text("~/.local/share/icons")
 
     @staticmethod
     def _has_linux_cursors(path: Path) -> bool:
@@ -59,7 +57,8 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
             return path.is_dir() and any(
                 item.is_file() and not item.suffix for item in path.iterdir()
             )
-        except OSError:
+        except OSError as err:
+            debug(f"Error checking Linux cursors in {path}: {err}")
             return False
 
     @staticmethod
@@ -69,19 +68,15 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
                 item.is_file() and item.suffix.lower() in {".cur", ".ani"}
                 for item in path.iterdir()
             )
-        except OSError:
+        except OSError as err:
+            debug(f"Error checking Windows cursors in {path}: {err}")
             return False
 
     @staticmethod
     def _display_path(path: Path) -> str:
         expanded = path.expanduser()
         value = str(expanded if expanded.is_absolute() else expanded.absolute())
-        replacements = (
-            ("/run/host/share/icons", "/usr/share/icons"),
-            ("/run/host/usr/share/icons", "/usr/share/icons"),
-            ("/run/host/usr/local/share/icons", "/usr/local/share/icons"),
-        )
-        for sandbox_path, system_path in replacements:
+        for system_path, sandbox_path in SANDBOX_PATH_REPLACEMENTS:
             if value == sandbox_path or value.startswith(sandbox_path + os.sep):
                 return system_path + value[len(sandbox_path) :]
         return value
@@ -116,22 +111,30 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
 
     @staticmethod
     def _find_cursor_paths(
-        roots: list[Path], subdirectory: str | None, is_cursor_directory, max_depth: int = 3
+        roots: list[Path],
+        subdirectory: str | None,
+        is_cursor_directory: Callable[[Path], bool],
+        max_depth: int = 2,
     ) -> list[str]:
         found: set[str] = set()
 
         def scan(directory: Path, depth: int) -> None:
+            if not directory.is_dir():
+                return
             candidate = directory / subdirectory if subdirectory else directory
             if is_cursor_directory(candidate):
                 found.add(FlexaPreferencesDialog._display_path(directory))
-            if depth >= max_depth or not directory.is_dir():
+                return  # Found a cursor theme, stop recursing into its subdirectories!
+
+            if depth >= max_depth:
                 return
             try:
                 children = list(directory.iterdir())
-            except OSError:
+            except OSError as err:
+                debug(f"Error scanning directory {directory}: {err}")
                 return
             for child in children:
-                if child.is_dir():
+                if child.is_dir() and not child.name.startswith("."):
                     scan(child, depth + 1)
 
         for root in roots:
@@ -156,38 +159,46 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
                         path=saved_path.replace(GLib.get_home_dir(), "~", 1)
                     )
                 )
+
+        selected_index = values.index(saved_path) if saved_path in values else 0
+
+        handler_id = getattr(row, "_fallback_handler_id", None)
+        if handler_id is not None and GObject.signal_handler_is_connected(row, handler_id):
+            row.disconnect(handler_id)
+
         row.set_model(Gtk.StringList.new(labels))
-        row.set_selected(values.index(saved_path) if saved_path in values else 0)
-        row.set_tooltip_text(values[row.get_selected()] or None)
-        row.connect("notify::selected", self._on_fallback_selected, key, values)
+        row.set_selected(selected_index)
+        row.set_tooltip_text(values[selected_index] or None)
 
-    def _on_fallback_selected(self, row: Adw.ComboRow, _pspec, key: str, values: list[str | None]):
-        row.set_tooltip_text(values[row.get_selected()] or None)
-        self.settings.set_string(key, values[row.get_selected()] or "")
+        new_handler_id = row.connect(
+            "notify::selected", self._on_fallback_selected, key, values
+        )
+        setattr(row, "_fallback_handler_id", new_handler_id)
 
-    def _on_select_fallback_folders(self, widget):
+    def _on_fallback_selected(
+        self, row: Adw.ComboRow, _pspec, key: str, values: list[str | None]
+    ) -> None:
+        selected = row.get_selected()
+        if 0 <= selected < len(values):
+            val = values[selected]
+            row.set_tooltip_text(val or None)
+            self.settings.set_string(key, val or "")
+
+    def _select_fallback_root(self, mode: str) -> None:
         dialog = Gtk.FileDialog()
-        parent = cast(Gtk.Window, self.get_root())
-        dialog.select_folder(parent=parent, callback=self._on_fallback_root_selected)
+        parent = cast(Gtk.Window | None, self.get_root())
 
-    def _on_select_fallback_folders_windows(self, widget):
-        dialog = Gtk.FileDialog()
-        parent = cast(Gtk.Window, self.get_root())
-        dialog.select_folder(parent=parent, callback=self._on_fallback_root_selected_windows)
+        def _on_finish(dialog: Gtk.FileDialog, result: Gio.AsyncResult) -> None:
+            try:
+                folder = dialog.select_folder_finish(result)
+                if folder:
+                    path = folder.get_path()
+                    if path:
+                        self._apply_fallback_root(path, mode)
+            except GLib.GError as err:
+                debug(f"Fallback folder selection error: {err}")
 
-    def _on_fallback_root_selected(self, dialog, result):
-        try:
-            folder = dialog.select_folder_finish(result)
-        except GLib.GError:
-            return
-        self._apply_fallback_root(folder.get_path(), "linux")
-
-    def _on_fallback_root_selected_windows(self, dialog, result):
-        try:
-            folder = dialog.select_folder_finish(result)
-        except GLib.GError:
-            return
-        self._apply_fallback_root(folder.get_path(), "windows")
+        dialog.select_folder(parent=parent, callback=_on_finish)
 
     def _apply_fallback_root(self, path: str, mode: str) -> None:
         if mode == "linux":
@@ -213,7 +224,7 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
         self.settings.set_string(root_key, self._display_path(Path(path)))
         self._setup_fallback_row(row, key, finder())
 
-    def _show_invalid_fallback_root_dialog(self):
+    def _show_invalid_fallback_root_dialog(self) -> None:
         dialog = Adw.AlertDialog(
             heading=_("No cursor themes found"),
             body=_("The selected folder does not contain cursor themes."),
@@ -222,10 +233,32 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
         dialog.set_default_response("ok")
         dialog.present(cast(Gtk.Widget, self.get_root()))
 
-    def __init__(self, settings, **kwargs):
+    def _async_load_fallback_paths(self) -> None:
+        linux_paths = self._find_linux_fallback_paths()
+        windows_paths = self._find_windows_fallback_paths()
+        GLib.idle_add(self._on_fallback_paths_loaded, linux_paths, windows_paths)
+
+    def _on_fallback_paths_loaded(
+        self, linux_paths: list[str], windows_paths: list[str]
+    ) -> bool:
+        self._setup_fallback_row(
+            self.fallback_linux_row,
+            "fallback-theme-path-linux",
+            linux_paths,
+        )
+        self._setup_fallback_row(
+            self.fallback_windows_row,
+            "fallback-theme-path-windows",
+            windows_paths,
+        )
+        return False
+
+    def __init__(self, settings: Gio.Settings, **kwargs) -> None:
         super().__init__(**kwargs)
         self.settings = settings
-        self.settings.bind("output-dir", self.output_dir_row, "text", Gio.SettingsBindFlags.DEFAULT)
+        self.settings.bind(
+            "output-dir", self.output_dir_row, "text", Gio.SettingsBindFlags.DEFAULT
+        )
         if self.settings.get_string("output-dir") == "":
             if os.name == "nt":
                 self.output_dir_row.set_text("~\\Documents\\Linux Cursors")
@@ -233,7 +266,10 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
                 self.output_dir_row.set_text("~/.local/share/icons")
 
         self.settings.bind(
-            "output-dir-windows", self.output_dir_windows_row, "text", Gio.SettingsBindFlags.DEFAULT
+            "output-dir-windows",
+            self.output_dir_windows_row,
+            "text",
+            Gio.SettingsBindFlags.DEFAULT,
         )
         if self.settings.get_string("output-dir-windows") == "":
             if os.name == "nt":
@@ -241,22 +277,25 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
             else:
                 self.output_dir_windows_row.set_text("~/Documents/Windows Cursors")
 
-        self.btn_browse_output.connect("clicked", self._on_select_folders)
-        self.btn_browse_output_windows.connect("clicked", self._on_select_folders_windows)
-        self.btn_browse_fallback_linux.connect("clicked", self._on_select_fallback_folders)
+        self.btn_browse_output.connect(
+            "clicked", lambda _: self._select_output_folder(self.output_dir_row)
+        )
+        self.btn_browse_output_windows.connect(
+            "clicked", lambda _: self._select_output_folder(self.output_dir_windows_row)
+        )
+        self.btn_browse_fallback_linux.connect(
+            "clicked", lambda _: self._select_fallback_root("linux")
+        )
         self.btn_browse_fallback_windows.connect(
-            "clicked", self._on_select_fallback_folders_windows
+            "clicked", lambda _: self._select_fallback_root("windows")
         )
         system = platform.system()
         self.btn_browse_fallback_linux.set_visible(system != "Linux")
         self.btn_browse_fallback_windows.set_visible(system != "Windows")
-        self._setup_fallback_row(
-            self.fallback_linux_row,
-            "fallback-theme-path-linux",
-            self._find_linux_fallback_paths(),
-        )
-        self._setup_fallback_row(
-            self.fallback_windows_row,
-            "fallback-theme-path-windows",
-            self._find_windows_fallback_paths(),
-        )
+
+        # Initial fast setup with saved values so UI opens with 0ms lag
+        self._setup_fallback_row(self.fallback_linux_row, "fallback-theme-path-linux", [])
+        self._setup_fallback_row(self.fallback_windows_row, "fallback-theme-path-windows", [])
+
+        # Asynchronously scan system cursor themes in the background
+        threading.Thread(target=self._async_load_fallback_paths, daemon=True).start()
