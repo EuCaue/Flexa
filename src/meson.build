@@ -29,6 +29,7 @@ configure_file(
 
 flexa_sources = [
     '__init__.py',
+    'debug.py',
     'main.py',
     'window.py',
     'preferences.py',

@@ -25,11 +25,11 @@ build-run-pt: install run-pt
 
 # Run without reinstalling (via flatpak-builder --run)
 run-fast:
-    flatpak-builder --run _build io.github.eucaue.flexa.json flexa
+    flatpak-builder --run _build io.github.eucaue.flexa.json env FLEXA_DEBUG=1 flexa
 
 # Run without reinstalling in Brazilian Portuguese
 run-fast-pt:
-    flatpak-builder --run _build io.github.eucaue.flexa.json env LANGUAGE=pt_BR flexa
+    flatpak-builder --run _build io.github.eucaue.flexa.json env FLEXA_DEBUG=1 LANGUAGE=pt_BR flexa
 
 # Build natively
 build-native:
@@ -40,13 +40,13 @@ build-native:
 install-native: build-native
     meson install -C build
 
-# Run the installed native application
+# Run the installed native application (with debug enabled)
 run-native:
-    GSETTINGS_SCHEMA_DIR="{{justfile_directory()}}/_native/share/glib-2.0/schemas" "{{justfile_directory()}}/_native/bin/flexa"
+    FLEXA_DEBUG=1 GSETTINGS_SCHEMA_DIR="{{justfile_directory()}}/_native/share/glib-2.0/schemas" "{{justfile_directory()}}/_native/bin/flexa"
 
-# Run the installed native application in Brazilian Portuguese
+# Run the installed native application in Brazilian Portuguese (with debug enabled)
 run-native-pt:
-    LANGUAGE=pt_BR GSETTINGS_SCHEMA_DIR="{{justfile_directory()}}/_native/share/glib-2.0/schemas" "{{justfile_directory()}}/_native/bin/flexa"
+    FLEXA_DEBUG=1 LANGUAGE=pt_BR GSETTINGS_SCHEMA_DIR="{{justfile_directory()}}/_native/share/glib-2.0/schemas" "{{justfile_directory()}}/_native/bin/flexa"
 
 # Build, install, and run natively
 build-run-native: install-native run-native
