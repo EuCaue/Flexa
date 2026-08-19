@@ -33,7 +33,7 @@ sys.path.insert(1, pkgdatadir)
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 try:
     locale.setlocale(locale.LC_ALL, '')
-except:
+except locale.Error:
     pass
 try:
     locale.bindtextdomain('flexa', localedir)

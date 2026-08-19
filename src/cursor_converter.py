@@ -1,11 +1,13 @@
 # cursor_converter.py
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 
-import sys
 import os
 import platform
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -17,6 +19,14 @@ import gi
 gi.require_version("Gio", "2.0")
 gi.require_version("GLib", "2.0")
 from gi.repository import Gio, GLib
+
+from .debug import debug
+
+SANDBOX_PATH_REPLACEMENTS: tuple[tuple[str, str], ...] = (
+    ("/usr/share/icons", "/run/host/share/icons"),
+    ("/usr/share/icons", "/run/host/usr/share/icons"),
+    ("/usr/local/share/icons", "/run/host/usr/local/share/icons"),
+)
 
 
 class ConversionStatus(Enum):
@@ -147,8 +157,34 @@ class BaseCursorConverter:
     _folders: list[Path] = field(default_factory=list, init=False, repr=False)
     _results: list[ConversionResult] = field(default_factory=list, init=False, repr=False)
     _skipped: set[Path] = field(default_factory=set, init=False, repr=False)
-    _cancellables: dict[Path, Gio.Cancellable] = field(default_factory=dict, init=False, repr=False)
+    _cancellables: dict[Path, Gio.Cancellable] = field(
+        default_factory=dict, init=False, repr=False
+    )
     _is_running: bool = field(default=False, init=False, repr=False)
+
+    @classmethod
+    def _candidate_paths_for(cls, binary_name: str) -> list[str]:
+        path_dirs = [e for e in os.environ.get("PATH", "").split(":") if e]
+        seen: set[str] = set()
+        result: list[str] = []
+        for entry in [*path_dirs, str(Path("~/.local/bin").expanduser())]:
+            candidate = str(Path(entry) / binary_name)
+            if candidate not in seen:
+                seen.add(candidate)
+                result.append(candidate)
+        return result
+
+    @classmethod
+    def _resolve_binary_command(cls, binary_name: str) -> list[str]:
+        if sys.platform == "win32" and getattr(sys, "frozen", False):
+            return [sys.executable, binary_name]
+        resolved = shutil.which(binary_name)
+        if not resolved:
+            raise FileNotFoundError(
+                f"{binary_name} not found. Checked:\n"
+                + "\n".join(cls._candidate_paths_for(binary_name))
+            )
+        return [resolved]
 
     @staticmethod
     def resolve_fallback_path(path: Path) -> Path:
@@ -157,14 +193,9 @@ class BaseCursorConverter:
             return expanded
 
         value = str(expanded)
-        replacements = (
-            ("/usr/share/icons", "/run/host/share/icons"),
-            ("/usr/share/icons", "/run/host/usr/share/icons"),
-            ("/usr/local/share/icons", "/run/host/usr/local/share/icons"),
-        )
-        for system_path, sandbox_path in replacements:
+        for system_path, sandbox_path in SANDBOX_PATH_REPLACEMENTS:
             if value == system_path or value.startswith(system_path + os.sep):
-                candidate = Path(sandbox_path + value[len(system_path):])
+                candidate = Path(sandbox_path + value[len(system_path) :])
                 if candidate.exists():
                     return candidate
         return expanded
@@ -177,24 +208,26 @@ class BaseCursorConverter:
             try:
                 result = subprocess.run(
                     [cmd, "-version"],
-                    capture_output=True, text=True, timeout=5,
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
                 )
                 if result.returncode != 0:
                     continue
                 match = re.search(r"ImageMagick (\d+)\.(\d+)\.(\d+)", result.stdout)
                 if match:
                     return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
-            except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+            except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as err:
+                debug(f"Error checking ImageMagick version with {cmd}: {err}")
                 continue
         return None
 
     @staticmethod
     def is_imagemagick_supported() -> bool:
         """Returns True if ImageMagick >= 7.0 is available."""
-        import sys
-        if getattr(sys, 'frozen', False) and platform.system() == "Windows":
+        if getattr(sys, "frozen", False) and platform.system() == "Windows":
             return True  # The PyInstaller build bundles wand + libMagickWand DLLs natively
-        
+
         version = BaseCursorConverter.get_imagemagick_version()
         return version is not None and version >= (7, 0, 0)
 
@@ -337,28 +370,31 @@ class BaseCursorConverter:
         raise NotImplementedError
 
     def _write_error_log(self, out_theme: Path, exc: Exception) -> None:
-        out_theme.mkdir(parents=True, exist_ok=True)
-        (out_theme / "conversion-error.txt").write_text(
-            f"error={exc}\nPATH={os.environ.get('PATH', '')}\n",
-            encoding="utf-8",
-        )
+        try:
+            out_theme.mkdir(parents=True, exist_ok=True)
+            (out_theme / "conversion-error.txt").write_text(
+                f"error={exc}\nPATH={os.environ.get('PATH', '')}\n",
+                encoding="utf-8",
+            )
+        except OSError as err:
+            debug(f"Failed to write error log in {out_theme}: {err}")
 
 
 @dataclass
 class CursorConverter(BaseCursorConverter):
     """Windows → Linux (win2xcur)"""
+
     win2xcur_bin: str = "win2xcur"
     fallback_path: Path | None = None
 
-    def is_win2xcur_available(self) -> bool:
+    @classmethod
+    def is_win2xcur_available(cls) -> bool:
         """Returns True if the win2xcur binary can be located on the system."""
         try:
-            self._resolve_win2xcur_command()
+            cls._resolve_binary_command(cls.win2xcur_bin)
             return True
         except FileNotFoundError:
             return False
-
-
 
     def _worker(self, task: Gio.Task, folder: Path) -> None:
         """
@@ -409,7 +445,7 @@ class CursorConverter(BaseCursorConverter):
         Since we are in a worker thread, we use communicate() which blocks
         the thread (not the main loop).
         """
-        win2xcur_cmd = self._resolve_win2xcur_command()
+        win2xcur_cmd = self._resolve_binary_command(self.win2xcur_bin)
 
         for win_filename, linux_names in mapping.items():
             if cancellable and cancellable.is_cancelled():
@@ -426,22 +462,21 @@ class CursorConverter(BaseCursorConverter):
                 launcher = Gio.SubprocessLauncher.new(
                     Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
                 )
-                launcher.set_environ(
-                    [f"{k}={v}" for k, v in os.environ.items()]
-                )
+                launcher.set_environ([f"{k}={v}" for k, v in os.environ.items()])
                 proc = launcher.spawnv([*win2xcur_cmd, str(src_file), "-o", temp_dir])
 
                 ok, _stdout, stderr_bytes = proc.communicate(None, cancellable)
 
                 if not ok or proc.get_exit_status() != 0:
-                    stderr = (
-                        stderr_bytes.get_data().decode(errors="replace") if stderr_bytes else ""
-                    )
+                    data = stderr_bytes.get_data() if stderr_bytes else None
+                    stderr = data.decode(errors="replace") if data is not None else ""
                     raise RuntimeError(f"win2xcur failed for {src_file.name}: {stderr}")
 
                 generated = Path(temp_dir) / src_file.stem
                 if not generated.exists():
-                    raise FileNotFoundError(f"win2xcur did not produce output for {src_file.name}")
+                    raise FileNotFoundError(
+                        f"win2xcur did not produce output for {src_file.name}"
+                    )
 
                 shutil.move(str(generated), str(out_file))
 
@@ -452,27 +487,6 @@ class CursorConverter(BaseCursorConverter):
                         shutil.copy2(out_file, link)
                     else:
                         link.symlink_to(primary_name)
-
-    def _resolve_win2xcur_command(self) -> list[str]:
-        if sys.platform == "win32" and getattr(sys, "frozen", False):
-            return [sys.executable, "win2xcur"]
-        resolved = shutil.which(self.win2xcur_bin)
-        if not resolved:
-            raise FileNotFoundError(
-                "win2xcur not found. Checked:\n" + "\n".join(self._candidate_paths())
-            )
-        return [resolved]
-
-    def _candidate_paths(self) -> list[str]:
-        path_dirs = [e for e in os.environ.get("PATH", "").split(":") if e]
-        seen: set[str] = set()
-        result: list[str] = []
-        for entry in [*path_dirs, str(Path("~/.local/bin").expanduser())]:
-            candidate = str(Path(entry) / self.win2xcur_bin)
-            if candidate not in seen:
-                seen.add(candidate)
-                result.append(candidate)
-        return result
 
     def _build_mapping(self, folder: Path) -> dict[str, list[str]]:
         inf = next((f for f in folder.iterdir() if f.suffix.lower() == ".inf"), None)
@@ -570,36 +584,17 @@ class CursorConverter(BaseCursorConverter):
 @dataclass
 class ReverseCursorConverter(BaseCursorConverter):
     """Linux → Windows (x2wincurtheme)"""
+
     x2wincurtheme_bin: str = "x2wincurtheme"
     fallback_path: Path | None = None
 
-    def is_x2wincurtheme_available(self) -> bool:
+    @classmethod
+    def is_x2wincurtheme_available(cls) -> bool:
         try:
-            self._resolve_x2wincurtheme_command()
+            cls._resolve_binary_command(cls.x2wincurtheme_bin)
             return True
         except FileNotFoundError:
             return False
-
-    def _resolve_x2wincurtheme_command(self) -> list[str]:
-        if sys.platform == "win32" and getattr(sys, "frozen", False):
-            return [sys.executable, "x2wincurtheme"]
-        resolved = shutil.which(self.x2wincurtheme_bin)
-        if not resolved:
-            raise FileNotFoundError(
-                "x2wincurtheme not found. Checked:\n" + "\n".join(self._candidate_paths())
-            )
-        return [resolved]
-
-    def _candidate_paths(self) -> list[str]:
-        path_dirs = [e for e in os.environ.get("PATH", "").split(":") if e]
-        seen: set[str] = set()
-        result: list[str] = []
-        for entry in [*path_dirs, str(Path("~/.local/bin").expanduser())]:
-            candidate = str(Path(entry) / self.x2wincurtheme_bin)
-            if candidate not in seen:
-                seen.add(candidate)
-                result.append(candidate)
-        return result
 
     def _worker(self, task: Gio.Task, folder: Path) -> None:
         theme_name = folder.parent.name if folder.name.lower() == "cursors" else folder.name
@@ -667,15 +662,21 @@ class ReverseCursorConverter(BaseCursorConverter):
         theme_name: str,
         cancellable: Gio.Cancellable | None,
     ) -> None:
-        import sys
-
         if sys.platform == "win32" and getattr(sys, "frozen", False):
             # No frozen Windows build, call x2wincurtheme directly in-process
             # to avoid launching a subprocess that lacks add_dll_directory setup.
             from win2xcur.main.x2wincurtheme import main as x2wincurtheme_main
+
             old_argv = sys.argv
             try:
-                sys.argv = ["x2wincurtheme", "-n", theme_name, "-o", str(out_dir), str(theme_dir)]
+                sys.argv = [
+                    "x2wincurtheme",
+                    "-n",
+                    theme_name,
+                    "-o",
+                    str(out_dir),
+                    str(theme_dir),
+                ]
                 ret = x2wincurtheme_main()
                 if ret and ret != 0:
                     raise RuntimeError(f"x2wincurtheme failed with exit code {ret}")
@@ -683,14 +684,12 @@ class ReverseCursorConverter(BaseCursorConverter):
                 sys.argv = old_argv
             return
 
-        x2wincurtheme_cmd = self._resolve_x2wincurtheme_command()
+        x2wincurtheme_cmd = self._resolve_binary_command(self.x2wincurtheme_bin)
 
         launcher = Gio.SubprocessLauncher.new(
             Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
         )
-        launcher.set_environ(
-            [f"{k}={v}" for k, v in os.environ.items()]
-        )
+        launcher.set_environ([f"{k}={v}" for k, v in os.environ.items()])
         proc = launcher.spawnv(
             [*x2wincurtheme_cmd, "-n", theme_name, "-o", str(out_dir), str(theme_dir)]
         )
@@ -698,7 +697,6 @@ class ReverseCursorConverter(BaseCursorConverter):
         ok, _stdout, stderr_bytes = proc.communicate(None, cancellable)
 
         if not ok or proc.get_exit_status() != 0:
-            stderr = (
-                stderr_bytes.get_data().decode(errors="replace") if stderr_bytes else ""
-            )
+            data = stderr_bytes.get_data() if stderr_bytes else None
+            stderr = data.decode(errors="replace") if data is not None else ""
             raise RuntimeError(f"x2wincurtheme failed for {theme_dir.name}: {stderr}")

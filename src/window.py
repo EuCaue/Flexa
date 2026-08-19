@@ -22,6 +22,8 @@ from gi.repository import Adw, Gtk
 
 @Gtk.Template(resource_path="/io/github/eucaue/flexa/window.ui")
 class FlexaWindow(Adw.ApplicationWindow):
+    """Main application window for Flexa."""
+
     __gtype_name__ = "FlexaWindow"
 
     toast_overlay: Adw.ToastOverlay = Gtk.Template.Child()
