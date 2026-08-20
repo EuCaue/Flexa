@@ -1,7 +1,9 @@
-name: Test Windows Build
+name: Build Windows
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-on: [push, workflow_dispatch]
+on:
+  workflow_dispatch:
+  workflow_call:
 
 jobs:
   build-windows:
@@ -50,13 +52,12 @@ jobs:
           $installDir = (Resolve-Path package/imagemagick).Path
           Start-Process -Wait -FilePath ".\imagemagick_installer.exe" -ArgumentList "/VERYSILENT", "/DIR=$installDir", "/NOICONS", "/NORESTART"
           
-          # Se installer criou subdir bin/, move tudo pra raiz (MAGICK_HOME precisa, incluindo modules/coders/)
+          # Move bin/ contents to root if installer created a subdirectory (MAGICK_HOME needs modules/coders/)
           if (Test-Path package/imagemagick/bin) {
             Get-ChildItem package/imagemagick/bin/* | Move-Item -Destination package/imagemagick/ -Force
             Remove-Item package/imagemagick/bin -Force
           }
           
-          # Remove binários, mantém DLLs
           Get-ChildItem package/imagemagick -Recurse -Filter *.exe | Remove-Item -Force
           Get-ChildItem package/imagemagick -Recurse -Filter *.htm | Remove-Item -Force
 
@@ -102,10 +103,10 @@ jobs:
 
           os.environ['PATH'] = im_dir + os.pathsep + base_dir + os.pathsep + os.environ.get('PATH', '')
           
-          # O wand procurará nativamente o diretório raiz usando o MAGICK_HOME
+          # wand finds the root directory via MAGICK_HOME
           os.environ['MAGICK_HOME'] = im_dir
-          # wand usa sufixo vazio '' pra achar CORE_RL_wand_.dll no MAGICK_HOME
-          # NÃO setar WAND_MAGICK_LIBRARY_SUFFIX — deixa wand iterar defaults
+          # wand uses empty suffix '' to find CORE_RL_wand_.dll in MAGICK_HOME
+          # Do NOT set WAND_MAGICK_LIBRARY_SUFFIX — let wand iterate defaults
           coder_path = os.path.join(im_dir, 'modules', 'coders')
           if os.path.exists(coder_path):
               os.environ['MAGICK_CODER_MODULE_PATH'] = coder_path
@@ -114,7 +115,7 @@ jobs:
               os.environ['MAGICK_CONFIGURE_PATH'] = conf_path
           os.environ['GSETTINGS_SCHEMA_DIR'] = os.path.join(base_dir, 'share', 'glib-2.0', 'schemas')
           
-          # FORCA O CARREGAMENTO DA DLL PARA O WAND ACHÁ-LA NA MEMÓRIA!
+          # Pre-load DLL so wand finds it in memory
           wand_dll_path = os.path.join(im_dir, "CORE_RL_wand_.dll")
           if os.path.exists(wand_dll_path):
               try:
@@ -122,7 +123,7 @@ jobs:
               except Exception as e:
                   print(f"Failed to load wand dll: {e}", file=sys.stderr)
 
-          # Injeção para o win2xcur não abrir subprocesso
+          # Route win2xcur CLI in-process to avoid subprocess
           if len(sys.argv) > 1 and sys.argv[1] == 'win2xcur':
               from win2xcur.main.win2xcur import main
               sys.argv.pop(0)

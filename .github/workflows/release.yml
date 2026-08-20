@@ -13,374 +13,20 @@ on:
 
 jobs:
   flatpak:
-    name: Flatpak
-    runs-on: ubuntu-latest
-    container:
-      image: fedora:43
-      options: --privileged
-    steps:
-      - name: Install Flatpak dependencies
-        run: |
-          dnf update -y
-          dnf install -y flatpak flatpak-builder xorg-x11-server-Xvfb git nodejs
-          git config --global --add safe.directory '*'
-          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build Flatpak
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
-        with:
-          bundle: flexa.flatpak
-          manifest-path: io.github.eucaue.flexa.json
-          cache-key: flatpak-${{ github.sha }}
-          branch: master
-          cache: ${{ !env.ACT }}
-          upload-artifact: ${{ !env.ACT }}
-      - name: Upload Flatpak artifact
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: flexa-flatpak
-          path: flexa.flatpak
+    uses: ./.github/workflows/build-flatpak.yml
 
   rpm:
-    name: RPM
-    runs-on: ubuntu-latest
-    container:
-      image: fedora:43
-    steps:
-      - name: Install dependencies
-        run: |
-          dnf install -y rpm-build meson ninja-build gettext desktop-file-utils \
-            libappstream-glib python3-devel gtk4-devel libadwaita-devel \
-            gobject-introspection-devel glib2-devel python3-gobject \
-            python3-numpy python3-wand ImageMagick python3-setuptools \
-            pyproject-rpm-macros python3-pip python3-wheel git curl nodejs \
-            python3-build python-installer python3-packaging rpmlint
-          git config --global --add safe.directory '*'
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Build python-win2xcur RPM
-        run: |
-          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-          WIN2XCUR_VER=$(rpmspec -q --queryformat='%{version}' packaging/rpm/python-win2xcur.spec)
-          curl -L -o "$HOME/rpmbuild/SOURCES/win2xcur-${WIN2XCUR_VER}.tar.gz" \
-            "https://github.com/quantum5/win2xcur/archive/v${WIN2XCUR_VER}/win2xcur-${WIN2XCUR_VER}.tar.gz"
-          cp packaging/rpm/python-win2xcur.spec ~/rpmbuild/SPECS/
-          rpmlint packaging/rpm/python-win2xcur.spec || true
-          rpmbuild -ba ~/rpmbuild/SPECS/python-win2xcur.spec
-      - name: Install python-win2xcur RPM
-        run: |
-          dnf install -y ~/rpmbuild/RPMS/noarch/python3-win2xcur-*.rpm
-      - name: Build flexa RPM
-        run: |
-          VERSION=$(rpmspec -q --queryformat='%{version}' packaging/rpm/flexa.spec)
-          git archive --format=tar.gz -o "$HOME/rpmbuild/SOURCES/flexa-${VERSION}.tar.gz" \
-            --prefix="flexa-${VERSION}/" HEAD
-          cp packaging/rpm/flexa.spec ~/rpmbuild/SPECS/
-          rpmlint packaging/rpm/flexa.spec || true
-          rpmbuild -ba ~/rpmbuild/SPECS/flexa.spec
-      - name: Copy RPMs to workspace (local testing)
-        if: ${{ env.ACT }}
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/dist"
-          find ~/rpmbuild/RPMS -name "*.rpm" -exec cp -v {} "$GITHUB_WORKSPACE/dist/" \;
-          find ~/rpmbuild/SRPMS -name "*.rpm" -exec cp -v {} "$GITHUB_WORKSPACE/dist/" \; || true
-          cd "$GITHUB_WORKSPACE/dist"
-          FLEXA_RPM=$(find . -maxdepth 1 -name "flexa-*.rpm" ! -name "*src*" | head -1)
-          if [ -n "$FLEXA_RPM" ]; then
-            rm -rf usr/
-            rpm2cpio "$FLEXA_RPM" | cpio -idm 2>/dev/null
-            # Compile GLib schemas
-            if [ -d usr/share/glib-2.0/schemas ]; then
-              glib-compile-schemas usr/share/glib-2.0/schemas/
-            fi
-            # Patch launcher paths for local execution
-            LAUNCHER=usr/bin/flexa
-            DIST="$GITHUB_WORKSPACE/dist"
-            sed -i "1s|#!.*|#!/usr/bin/python3|" "$LAUNCHER"
-            sed -i "s|^pkgdatadir = '.*'|pkgdatadir = '${DIST}/usr/share/flexa'|" "$LAUNCHER"
-            sed -i "s|^localedir = '.*'|localedir = '${DIST}/usr/share/locale'|" "$LAUNCHER"
-            sed -i "s|^import os|import os\nos.environ['GSETTINGS_SCHEMA_DIR'] = '${DIST}/usr/share/glib-2.0/schemas'|" "$LAUNCHER"
-            echo ""
-            echo "RPM READY: $DIST/usr/bin/flexa"
-          fi
-      - name: Upload RPM artifacts
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: flexa-rpm
-          path: |
-            ~/rpmbuild/RPMS/**/*.rpm
-            ~/rpmbuild/SRPMS/*.rpm
+    uses: ./.github/workflows/build-rpm.yml
 
   deb:
-    name: DEB
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y debhelper meson ninja-build gettext desktop-file-utils \
-            libappstream-glib-dev python3-dev libgtk-4-dev libadwaita-1-dev \
-            libgirepository1.0-dev libglib2.0-dev python3-gi python3-gi-cairo \
-            python3-cairo dh-python python3-setuptools python3-wheel \
-            python3-all python3-build python3-numpy python3-wand dpkg-dev lintian
-          git config --global --add safe.directory '*'
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Build python-win2xcur DEB
-        run: |
-          WORKSPACE_DIR=$(pwd)
-          WIN2XCUR_VER=$(dpkg-parsechangelog -l packaging/debian/python-win2xcur/changelog -SVersion | cut -d- -f1)
-          mkdir -p /tmp/win2xcur-build
-          cd /tmp/win2xcur-build
-          curl -L -o "win2xcur-${WIN2XCUR_VER}.tar.gz" \
-            "https://github.com/quantum5/win2xcur/archive/v${WIN2XCUR_VER}/win2xcur-${WIN2XCUR_VER}.tar.gz"
-          tar xzf "win2xcur-${WIN2XCUR_VER}.tar.gz"
-          cd "win2xcur-${WIN2XCUR_VER}"
-          cp -r "$WORKSPACE_DIR/packaging/debian/python-win2xcur" debian
-          dpkg-buildpackage -us -uc -b
-      - name: Install python-win2xcur DEB
-        run: |
-          sudo dpkg -i /tmp/win2xcur-build/python3-win2xcur_*.deb || sudo apt-get install -f -y
-      - name: Build flexa DEB
-        run: |
-          rm -rf debian
-          cp -r packaging/debian/flexa debian
-          dpkg-buildpackage -us -uc -b
-      - name: Collect DEB artifacts
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/dist"
-          find /tmp/win2xcur-build -maxdepth 1 \( -name "*.deb" -o -name "*.ddeb" \) -exec cp -v {} "$GITHUB_WORKSPACE/dist/" \; 2>/dev/null || true
-          PARENT=$(dirname "$GITHUB_WORKSPACE")
-          find "$PARENT" -maxdepth 1 \( -name "*.deb" -o -name "*.ddeb" \) -exec cp -v {} "$GITHUB_WORKSPACE/dist/" \; 2>/dev/null || true
-      - name: Extract DEB for local testing
-        if: ${{ env.ACT }}
-        run: |
-          cd "$GITHUB_WORKSPACE/dist"
-          FLEXA_DEB=$(find . -maxdepth 1 -name "flexa_*.deb" ! -name "*dbgsym*" | head -1)
-          if [ -n "$FLEXA_DEB" ]; then
-            dpkg-deb -x "$FLEXA_DEB" .
-            # Compile GLib schemas
-            if [ -d usr/share/glib-2.0/schemas ]; then
-              glib-compile-schemas usr/share/glib-2.0/schemas/
-            fi
-            # Patch launcher paths for local execution
-            LAUNCHER=usr/bin/flexa
-            DIST="$GITHUB_WORKSPACE/dist"
-            sed -i "1s|#!.*|#!/usr/bin/python3|" "$LAUNCHER"
-            sed -i "s|^pkgdatadir = '.*'|pkgdatadir = '${DIST}/usr/share/flexa'|" "$LAUNCHER"
-            sed -i "s|^localedir = '.*'|localedir = '${DIST}/usr/share/locale'|" "$LAUNCHER"
-            sed -i "s|^import os|import os\nos.environ['GSETTINGS_SCHEMA_DIR'] = '${DIST}/usr/share/glib-2.0/schemas'|" "$LAUNCHER"
-            echo ""
-            echo "DEB READY: $DIST/usr/bin/flexa"
-          fi
-      - name: Upload DEB artifacts
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: flexa-deb
-          path: dist/
+    uses: ./.github/workflows/build-deb.yml
 
-  build-windows:
-    name: Windows
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: >-
-            mingw-w64-x86_64-python
-            mingw-w64-x86_64-gtk4
-            mingw-w64-x86_64-python-gobject
-            mingw-w64-x86_64-libadwaita
-            mingw-w64-x86_64-python-pip
-            mingw-w64-x86_64-python-numpy
-            mingw-w64-x86_64-glib2
-            mingw-w64-x86_64-imagemagick
-            zip
-            p7zip
-            jq
-            curl
-      - name: Install PyInstaller and dependencies
-        run: |
-          pip install --break-system-packages pyinstaller
-          pip install --break-system-packages --no-deps win2xcur wand
-      - name: Compile GSettings Schema
-        run: glib-compile-schemas data/
-        
-      - name: Fetch Official DLL ImageMagick
-        shell: pwsh
-        run: |
-          Write-Output "Baixando ImageMagick DLL Windows..."
-          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/ImageMagick/ImageMagick/releases/latest"
-          $url = $release.assets | Where-Object { $_.name -match "Q16-HDRI-x64-dll.exe" } | Select-Object -ExpandProperty browser_download_url
-          Invoke-WebRequest -Uri $url -OutFile imagemagick_installer.exe
-          
-          New-Item -ItemType Directory -Force -Path package/imagemagick | Out-Null
-          $installDir = (Resolve-Path package/imagemagick).Path
-          Start-Process -Wait -FilePath ".\imagemagick_installer.exe" -ArgumentList "/VERYSILENT", "/DIR=$installDir", "/NOICONS", "/NORESTART"
-          
-          # Move bin/ contents to root if installer created a subdirectory (MAGICK_HOME needs modules/coders/)
-          if (Test-Path package/imagemagick/bin) {
-            Get-ChildItem package/imagemagick/bin/* | Move-Item -Destination package/imagemagick/ -Force
-            Remove-Item package/imagemagick/bin -Force
-          }
-          
-          Get-ChildItem package/imagemagick -Recurse -Filter *.exe | Remove-Item -Force
-          Get-ChildItem package/imagemagick -Recurse -Filter *.htm | Remove-Item -Force
-
-      - name: Debug ImageMagick structure
-        shell: pwsh
-        run: Get-ChildItem package/imagemagick -Recurse | Select-Object FullName, Length
-
-      - name: Build with PyInstaller
-        run: |
-          mkdir -p data/icons
-          magick -background none data/icons/hicolor/scalable/apps/io.github.eucaue.flexa.svg -define icon:auto-resize=16,32,48,64,256 data/icons/flexa.ico
-
-          mkdir -p package/share/icons
-          cp -r /mingw64/share/icons/Adwaita package/share/icons/
-
-          cp data/io.github.eucaue.flexa.gschema.xml /mingw64/share/glib-2.0/schemas/
-          glib-compile-schemas /mingw64/share/glib-2.0/schemas/
-
-          TYPELIB_DIR=/mingw64/lib/girepository-1.0
-          mkdir -p package/gi_typelibs
-          for tl in Gtk-4.0 Gdk-4.0 Gsk-4.0 GdkPixbuf-2.0 Pango-1.0 \
-                    PangoCairo-1.0 Graphene-1.0 cairo-1.0 HarfBuzz-0.0; do
-            cp "$TYPELIB_DIR/$tl.typelib" package/gi_typelibs/ 2>/dev/null || true
-          done
-
-          glib-compile-resources --sourcedir=src src/flexa.gresource.xml --target=package/share/flexa.gresource
-
-          cat > flexa_launcher.py << 'LAUNCHER'
-          import sys, os, glob, ctypes
-
-          base_dir = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-          im_dir = os.path.join(base_dir, 'imagemagick')
-
-          # Garante que o Windows procure bibliotecas na nossa pasta isolada do ImageMagick
-          if hasattr(os, 'add_dll_directory'):
-              os.add_dll_directory(base_dir)
-              os.add_dll_directory(im_dir)
-              
-          try:
-              ctypes.windll.kernel32.SetDllDirectoryW(im_dir)
-          except:
-              pass
-
-          os.environ['PATH'] = im_dir + os.pathsep + base_dir + os.pathsep + os.environ.get('PATH', '')
-          
-          # wand finds the root directory via MAGICK_HOME
-          os.environ['MAGICK_HOME'] = im_dir
-          # wand uses empty suffix '' to find CORE_RL_wand_.dll in MAGICK_HOME
-          # Do NOT set WAND_MAGICK_LIBRARY_SUFFIX — let wand iterate defaults
-          coder_path = os.path.join(im_dir, 'modules', 'coders')
-          if os.path.exists(coder_path):
-              os.environ['MAGICK_CODER_MODULE_PATH'] = coder_path
-          conf_path = os.path.join(im_dir, 'etc', 'ImageMagick-7')
-          if os.path.exists(conf_path):
-              os.environ['MAGICK_CONFIGURE_PATH'] = conf_path
-          os.environ['GSETTINGS_SCHEMA_DIR'] = os.path.join(base_dir, 'share', 'glib-2.0', 'schemas')
-          
-          # Pre-load DLL so wand finds it in memory
-          wand_dll_path = os.path.join(im_dir, "CORE_RL_wand_.dll")
-          if os.path.exists(wand_dll_path):
-              try:
-                  ctypes.CDLL(wand_dll_path)
-              except Exception as e:
-                  print(f"Failed to load wand dll: {e}", file=sys.stderr)
-
-          # Route win2xcur CLI in-process to avoid subprocess
-          if len(sys.argv) > 1 and sys.argv[1] == 'win2xcur':
-              from win2xcur.main.win2xcur import main
-              sys.argv.pop(0)
-              sys.exit(main())
-          elif len(sys.argv) > 1 and sys.argv[1] == 'x2wincurtheme':
-              from win2xcur.main.x2wincurtheme import main
-              sys.argv.pop(0)
-              sys.exit(main())
-
-          from gi.repository import Gio
-          resource = Gio.Resource.load(os.path.join(base_dir, 'share', 'flexa.gresource'))
-          resource._register()
-
-          sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-          from src.main import main
-          main("dev")
-          LAUNCHER
-
-          pyinstaller --noconfirm --onedir --noconsole \
-            --name flexa \
-            --icon "data/icons/flexa.ico" \
-            --add-data "package/imagemagick;imagemagick" \
-            --add-data "src;src" \
-            --add-data "data/io.github.eucaue.flexa.gschema.xml;data" \
-            --add-data "package/share;share" \
-            --add-data "package/gi_typelibs;gi_typelibs" \
-            --hidden-import gi \
-            --hidden-import gi.repository.Gtk \
-            --hidden-import gi.repository.Gdk \
-            --hidden-import gi.repository.Adw \
-            --hidden-import gi.repository.Gio \
-            --hidden-import gi.repository.GLib \
-            --hidden-import gi.repository.GObject \
-            --hidden-import gi.repository.GdkPixbuf \
-            --hidden-import gi.repository.Pango \
-            --hidden-import gi.repository.Graphene \
-            --hidden-import gi.overrides.Gtk \
-            --hidden-import gi.overrides.Gdk \
-            --hidden-import gi.overrides.Gio \
-            --hidden-import gi.overrides.GLib \
-            --hidden-import gi.overrides.GObject \
-            --hidden-import gi.overrides.Pango \
-            --hidden-import gi.overrides.GdkPixbuf \
-            --hidden-import numpy \
-            --hidden-import wand \
-            --hidden-import wand.image \
-            --hidden-import wand.color \
-            --hidden-import win2xcur.main.win2xcur \
-            --hidden-import win2xcur.main.x2wincurtheme \
-            --hidden-import src.main \
-            --hidden-import src.cursor_converter \
-            --hidden-import src.preferences \
-            --hidden-import src.window \
-            flexa_launcher.py
-            
-      - name: Extract Version
-        id: version
-        shell: bash
-        run: |
-          VERSION=$(grep -oP "(?<=version:\s')[^']*" meson.build | head -1)
-          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Build Inno Setup Installer
-        shell: pwsh
-        run: |
-          iscc "/dAppVersion=$env:APP_VERSION" flexa.iss
-          
-      - name: Upload Windows Installer artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: flexa-windows-installer
-          path: dist/Flexa-Windows-Installer.exe
+  windows:
+    uses: ./.github/workflows/build-windows.yml
 
   release:
     name: Create Release
-    needs: [flatpak, rpm, deb, build-windows]
+    needs: [flatpak, rpm, deb, windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     permissions:
@@ -407,20 +53,20 @@ jobs:
           cat << 'EOF' > release_body.md
           ## Flexa ${{ github.event.inputs.tag_name || github.ref_name }}
           ### Installation
-          **Flatpak** — Download `flexa.flatpak` below and install:
+          **Flatpak** - Download `flexa.flatpak` below and install:
           ```sh
           flatpak install --user flexa.flatpak
           ```
-          **RPM** — Download the RPM files below and install:
+          **RPM** - Download the RPM files below and install:
           ```sh
           sudo dnf install ./python3-win2xcur-*.rpm ./flexa-*.rpm
           ```
-          **DEB** — Download the DEB files below and install:
+          **DEB** - Download the DEB files below and install:
           ```sh
           sudo apt install ./python3-win2xcur_*.deb ./flexa_*.deb
           ```
-          **Windows** — Download `Flexa-Windows-Installer.exe` and run the installer.
-          **Flathub** — Coming soon.
+          **Windows** - Download `Flexa-Windows-Installer.exe` and run the installer.
+          **Flathub** - Coming soon.
           ### SHA256 Checksums
           | File | SHA256 Checksum |
           |------|-----------------|

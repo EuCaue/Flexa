@@ -1,0 +1,78 @@
+name: Build DEB
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  deb:
+    name: DEB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y debhelper meson ninja-build gettext desktop-file-utils \
+            libappstream-glib-dev python3-dev libgtk-4-dev libadwaita-1-dev \
+            libgirepository1.0-dev libglib2.0-dev python3-gi python3-gi-cairo \
+            python3-cairo dh-python python3-setuptools python3-wheel \
+            python3-all python3-build python3-numpy python3-wand dpkg-dev lintian
+          git config --global --add safe.directory '*'
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build python-win2xcur DEB
+        run: |
+          WORKSPACE_DIR=$(pwd)
+          WIN2XCUR_VER=$(dpkg-parsechangelog -l packaging/debian/python-win2xcur/changelog -SVersion | cut -d- -f1)
+          mkdir -p /tmp/win2xcur-build
+          cd /tmp/win2xcur-build
+          curl -L -o "win2xcur-${WIN2XCUR_VER}.tar.gz" \
+            "https://github.com/quantum5/win2xcur/archive/v${WIN2XCUR_VER}/win2xcur-${WIN2XCUR_VER}.tar.gz"
+          tar xzf "win2xcur-${WIN2XCUR_VER}.tar.gz"
+          cd "win2xcur-${WIN2XCUR_VER}"
+          cp -r "$WORKSPACE_DIR/packaging/debian/python-win2xcur" debian
+          dpkg-buildpackage -us -uc -b
+      - name: Install python-win2xcur DEB
+        run: |
+          sudo dpkg -i /tmp/win2xcur-build/python3-win2xcur_*.deb || sudo apt-get install -f -y
+      - name: Build flexa DEB
+        run: |
+          rm -rf debian
+          cp -r packaging/debian/flexa debian
+          dpkg-buildpackage -us -uc -b
+      - name: Collect DEB artifacts
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          find /tmp/win2xcur-build -maxdepth 1 \( -name "*.deb" -o -name "*.ddeb" \) -exec cp -v {} "$GITHUB_WORKSPACE/dist/" \; 2>/dev/null || true
+          PARENT=$(dirname "$GITHUB_WORKSPACE")
+          find "$PARENT" -maxdepth 1 \( -name "*.deb" -o -name "*.ddeb" \) -exec cp -v {} "$GITHUB_WORKSPACE/dist/" \; 2>/dev/null || true
+      - name: Extract DEB for local testing
+        if: ${{ env.ACT }}
+        run: |
+          cd "$GITHUB_WORKSPACE/dist"
+          FLEXA_DEB=$(find . -maxdepth 1 -name "flexa_*.deb" ! -name "*dbgsym*" | head -1)
+          if [ -n "$FLEXA_DEB" ]; then
+            dpkg-deb -x "$FLEXA_DEB" .
+            # Compile GLib schemas
+            if [ -d usr/share/glib-2.0/schemas ]; then
+              glib-compile-schemas usr/share/glib-2.0/schemas/
+            fi
+            # Patch launcher paths for local execution
+            LAUNCHER=usr/bin/flexa
+            DIST="$GITHUB_WORKSPACE/dist"
+            sed -i "1s|#!.*|#!/usr/bin/python3|" "$LAUNCHER"
+            sed -i "s|^pkgdatadir = '.*'|pkgdatadir = '${DIST}/usr/share/flexa'|" "$LAUNCHER"
+            sed -i "s|^localedir = '.*'|localedir = '${DIST}/usr/share/locale'|" "$LAUNCHER"
+            sed -i "s|^import os|import os\nos.environ['GSETTINGS_SCHEMA_DIR'] = '${DIST}/usr/share/glib-2.0/schemas'|" "$LAUNCHER"
+            echo ""
+            echo "DEB READY: $DIST/usr/bin/flexa"
+          fi
+      - name: Upload DEB artifacts
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: flexa-deb
+          path: dist/

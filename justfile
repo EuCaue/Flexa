@@ -60,15 +60,15 @@ logs:
 
 # Test Flatpak GitHub Action locally
 act-flatpak:
-    act -j flatpak --bind
+    act -W .github/workflows/build-flatpak.yml -j flatpak --bind
 
 # Test RPM GitHub Action locally
 act-rpm:
-    act -j rpm --bind
+    act -W .github/workflows/build-rpm.yml -j rpm --bind
 
 # Test DEB GitHub Action locally
 act-deb:
-    act -j deb --bind
+    act -W .github/workflows/build-deb.yml -j deb --bind
 
 # Clean build caches and directories
 clean:
