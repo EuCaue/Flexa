@@ -52,6 +52,16 @@ def gtk_escape(text: str) -> str:
     return text.replace("&", "&&")
 
 
+_DEFAULT_OUTPUT_DIRS = {
+    "output-dir": "~/.local/share/icons",
+    "output-dir-windows": "~/Documents/Windows Cursors",
+}
+
+
+def _default_output_dir(key: str) -> Path:
+    return Path(_DEFAULT_OUTPUT_DIRS.get(key, "~")).expanduser()
+
+
 class ConversionMode(Enum):
     TO_LINUX = "to-linux"
     TO_WINDOWS = "to-windows"
@@ -529,7 +539,8 @@ class FlexaApplication(Adw.Application):
         self.window.btn_add.set_sensitive(False)
         btn.set_child(Gtk.Spinner(spinning=True))
 
-        output_dir = Path(self.settings.get_string(output_key)).expanduser()
+        raw = self.settings.get_string(output_key)
+        output_dir = Path(raw).expanduser() if raw else _default_output_dir(output_key)
 
         if mode == ConversionMode.TO_LINUX:
             converter: BaseCursorConverter = CursorConverter(
@@ -684,7 +695,8 @@ class FlexaApplication(Adw.Application):
 
     def on_open_output_dir(self, _toast, mode: ConversionMode):
         output_key = "output-dir" if mode == ConversionMode.TO_LINUX else "output-dir-windows"
-        output_path = Path(self.settings.get_string(output_key)).expanduser()
+        raw = self.settings.get_string(output_key)
+        output_path = Path(raw).expanduser() if raw else _default_output_dir(output_key)
         file = Gio.File.new_for_path(str(output_path))
         launcher = Gtk.FileLauncher.new(file)
         try:
