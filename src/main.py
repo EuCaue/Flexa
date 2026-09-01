@@ -48,8 +48,8 @@ LINUX_BASIC_CURSORS = {"arrow", "left_ptr", "default", "pointer"}
 
 
 def gtk_escape(text: str) -> str:
-    """Escape & for GTK plain-text labels (accelerator prefix)."""
-    return text.replace("&", "&&")
+    """Escape text for Pango markup (Adw.ActionRow title uses markup by default)."""
+    return GLib.markup_escape_text(text)
 
 
 _DEFAULT_OUTPUT_DIRS = {
