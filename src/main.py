@@ -47,6 +47,11 @@ WINDOWS_CURSOR_FILES = {"install.inf"}
 LINUX_BASIC_CURSORS = {"arrow", "left_ptr", "default", "pointer"}
 
 
+def gtk_escape(text: str) -> str:
+    """Escape & for GTK plain-text labels (accelerator prefix)."""
+    return text.replace("&", "&&")
+
+
 class ConversionMode(Enum):
     TO_LINUX = "to-linux"
     TO_WINDOWS = "to-windows"
@@ -204,9 +209,7 @@ class FlexaApplication(Adw.Application):
             self.folder_dialog.set_title(_("Select Windows cursor folders"))
         else:
             self.folder_dialog.set_title(_("Select Linux cursor theme folders"))
-        self.folder_dialog.select_multiple_folders(
-            self.window, None, self.on_select_folders, None
-        )
+        self.folder_dialog.select_multiple_folders(self.window, None, self.on_select_folders, None)
 
     def on_select_folders(self, dialog, result, _):
         try:
@@ -308,9 +311,7 @@ class FlexaApplication(Adw.Application):
 
     def _folder_already_added(self, folder_path: str) -> bool:
         """Check if folder is already in the list."""
-        return any(
-            f.folder_path == folder_path for f in self.folder_rows[self.active_mode]
-        )
+        return any(f.folder_path == folder_path for f in self.folder_rows[self.active_mode])
 
     def _has_cursor_files(self, folder_path: str) -> bool:
         if self.active_mode == ConversionMode.TO_LINUX:
@@ -355,14 +356,12 @@ class FlexaApplication(Adw.Application):
         return False
 
     def _show_invalid_folders_dialog(self, rejected: list[str]):
-        rejected_list = "\n".join(f"• {name}" for name in rejected)
+        rejected_list = "\n".join(f"• {gtk_escape(name)}" for name in rejected)
 
         if self.active_mode == ConversionMode.TO_LINUX:
             expected = _("Expected *.cur, *.ani or install.inf inside the folder.")
         else:
-            expected = _(
-                "Expected a 'cursors' subdirectory or Xcursor files inside the folder."
-            )
+            expected = _("Expected a 'cursors' subdirectory or Xcursor files inside the folder.")
 
         dialog = Adw.AlertDialog(
             heading=_("No cursor files found"),
@@ -374,7 +373,7 @@ class FlexaApplication(Adw.Application):
 
     def on_create_folder_row(self, row_name: str, row_folder_path: str):
         row = Adw.ActionRow(
-            title=row_name,
+            title=gtk_escape(row_name),
             subtitle=row_folder_path,
             tooltip_text=row_folder_path,
         )
@@ -412,18 +411,14 @@ class FlexaApplication(Adw.Application):
             spinner=spinner,
         )
         mode = self.active_mode
-        remove_btn.connect(
-            "clicked", lambda _: self.on_remove_folder(row, row_data, mode)
-        )
+        remove_btn.connect("clicked", lambda _: self.on_remove_folder(row, row_data, mode))
         self.folder_rows[mode].append(row_data)
         row.add_prefix(folder_icon)
         row.add_suffix(status_stack)
         row.add_suffix(remove_btn)
         return row
 
-    def on_remove_folder(
-        self, row: Adw.ActionRow, row_data: RowData, mode: ConversionMode
-    ):
+    def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData, mode: ConversionMode):
         self._get_cursor_list(mode).remove(row)
         self.folder_rows[mode].remove(row_data)
         converter = self.converters[mode]
@@ -449,9 +444,7 @@ class FlexaApplication(Adw.Application):
             drop_target.connect("leave", self.on_drop_leave, list_box)
             list_box.add_controller(drop_target)
 
-    def on_drop_folders(
-        self, target: Gtk.DropTarget, value: Gdk.FileList, x: int, y: int
-    ):
+    def on_drop_folders(self, target: Gtk.DropTarget, value: Gdk.FileList, x: int, y: int):
         assert self.window is not None
         folders = [
             (
@@ -461,9 +454,7 @@ class FlexaApplication(Adw.Application):
                 ).get_display_name(),
             )
             for f in value.get_files()
-            if f.query_info(
-                "standard::type", Gio.FileQueryInfoFlags.NONE, None
-            ).get_file_type()
+            if f.query_info("standard::type", Gio.FileQueryInfoFlags.NONE, None).get_file_type()
             == Gio.FileType.DIRECTORY
         ]
 
@@ -481,12 +472,8 @@ class FlexaApplication(Adw.Application):
 
     def setup_empty_state(self):
         assert self.window is not None
-        self.window.cursor_list_to_linux.set_placeholder(
-            self.empty_status_page_to_linux
-        )
-        self.window.cursor_list_to_windows.set_placeholder(
-            self.empty_status_page_to_windows
-        )
+        self.window.cursor_list_to_linux.set_placeholder(self.empty_status_page_to_linux)
+        self.window.cursor_list_to_windows.set_placeholder(self.empty_status_page_to_windows)
 
         click_linux = Gtk.GestureClick()
         click_linux.connect("pressed", self.on_empty_state_clicked)
@@ -496,9 +483,7 @@ class FlexaApplication(Adw.Application):
         click_windows.connect("pressed", self.on_empty_state_clicked)
         self.empty_status_page_to_windows.add_controller(click_windows)
 
-    def on_empty_state_clicked(
-        self, _gesture: Gtk.GestureClick, _x: float, _y: float, _n_press
-    ):
+    def on_empty_state_clicked(self, _gesture: Gtk.GestureClick, _x: float, _y: float, _n_press):
         if len(self.folder_rows[self.active_mode]) == 0:
             self.on_add_folders(None)
 
@@ -568,9 +553,7 @@ class FlexaApplication(Adw.Application):
     def _show_invalid_fallback_dialog(self, fallback_path: Path):
         dialog = Adw.AlertDialog(
             heading=_("Fallback unavailable"),
-            body=_(
-                "Selected folder is unavailable or has no compatible cursors."
-            )
+            body=_("Selected folder is unavailable or has no compatible cursors.")
             + f"\n\n{fallback_path}",
         )
         dialog.add_response("close", _("Close"))
@@ -700,11 +683,7 @@ class FlexaApplication(Adw.Application):
             self.window.toast_overlay.add_toast(toast)
 
     def on_open_output_dir(self, _toast, mode: ConversionMode):
-        output_key = (
-            "output-dir"
-            if mode == ConversionMode.TO_LINUX
-            else "output-dir-windows"
-        )
+        output_key = "output-dir" if mode == ConversionMode.TO_LINUX else "output-dir-windows"
         output_path = Path(self.settings.get_string(output_key)).expanduser()
         file = Gio.File.new_for_path(str(output_path))
         launcher = Gtk.FileLauncher.new(file)
