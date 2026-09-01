@@ -384,7 +384,7 @@ class FlexaApplication(Adw.Application):
     def on_create_folder_row(self, row_name: str, row_folder_path: str):
         row = Adw.ActionRow(
             title=gtk_escape(row_name),
-            subtitle=row_folder_path,
+            subtitle=gtk_escape(row_folder_path),
             tooltip_text=row_folder_path,
         )
         folder_icon = Gtk.Image(icon_name="folder-symbolic")
