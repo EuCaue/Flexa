@@ -1,3 +1,10 @@
+flexa (1.2.1-1) unstable; urgency=medium
+
+  * Fix folder names with special characters (&) in UI
+  * Fix default output directory on first run
+
+ -- caue <caue@fedora>  Tue, 01 Sep 2026 22:00:00 +0000
+
 flexa (1.0.0-1) unstable; urgency=medium
 
   * Initial release.
