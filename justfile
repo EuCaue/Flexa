@@ -70,6 +70,15 @@ act-rpm:
 act-deb:
     act -W .github/workflows/build-deb.yml -j deb --bind
 
+# Lint flatpak manifest via flathub container
+lint-manifest:
+    mkdir -p /tmp/opencode/lintwork && cp io.github.eucaue.flexa.json /tmp/opencode/lintwork/
+    podman run --rm -v "/tmp/opencode/lintwork:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged manifest io.github.eucaue.flexa.json
+
+# Lint exported ostree repo via flathub container (run after build with --repo=repo)
+lint-repo:
+    podman run --rm -v "{{justfile_directory()}}/repo:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged repo /work
+
 # Clean build caches and directories
 clean:
     rm -rf _build build .flatpak-builder _native dist
