@@ -1,7 +1,7 @@
 {
   "id": "io.github.eucaue.flexa",
   "runtime": "org.gnome.Platform",
-  "runtime-version": "50",
+  "runtime-version": "51",
   "sdk": "org.gnome.Sdk",
   "command": "flexa",
   "finish-args": [
@@ -9,7 +9,7 @@
     "--socket=fallback-x11",
     "--device=dri",
     "--socket=wayland",
-    "--env=PYTHONPATH=/app/lib/python3.13/site-packages",
+    "--env=PYTHONPATH=/app/lib/python3.13/site-packages:/app/lib/python3.14/site-packages",
     "--env=PATH=/app/bin:/usr/bin"
   ],
   "cleanup": [
@@ -35,12 +35,8 @@
         "--without-x",
         "--enable-shared"
       ],
-      "sources": [
-        {
-          "type": "archive",
-          "url": "https://github.com/ImageMagick/ImageMagick/archive/refs/tags/7.1.1-43.tar.gz",
-          "sha256": "ceb972266b23dc7c1cfce0da5a7f0c9acfb4dc81f40eb542a49476fedbc2618f"
-        }
+      "post-install": [
+        "install -Dm0644 LICENSE -t ${FLATPAK_DEST}/share/licenses/io.github.eucaue.flexa/imagemagick/"
       ],
       "cleanup": [
         "/bin/Magick++-config",
@@ -49,8 +45,12 @@
         "/include",
         "/lib/pkgconfig"
       ],
-      "post-install": [
-        "install -Dm0644 LICENSE -t ${FLATPAK_DEST}/share/licenses/io.github.eucaue.flexa/imagemagick/"
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/ImageMagick/ImageMagick/archive/refs/tags/7.1.1-43.tar.gz",
+          "sha256": "ceb972266b23dc7c1cfce0da5a7f0c9acfb4dc81f40eb542a49476fedbc2618f"
+        }
       ]
     },
     {
@@ -59,7 +59,9 @@
       "build-commands": [
         "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"pyproject-metadata==0.12.1\" --no-build-isolation",
         "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"meson-python==0.22.1\" --no-build-isolation",
-        "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"win2xcur==0.2.1\" --no-build-isolation",
+        "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"win2xcur==0.2.1\" --no-build-isolation"
+      ],
+      "post-install": [
         "install -Dm0644 LICENSE -t ${FLATPAK_DEST}/share/licenses/io.github.eucaue.flexa/python3-win2xcur/"
       ],
       "sources": [

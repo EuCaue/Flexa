@@ -49,12 +49,42 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/eucaue/flexa/main/flexa.png</image>
+      <image>https://raw.githubusercontent.com/eucaue/flexa/v1.2.1/flexa.png</image>
       <caption>Main window with cursor folders added</caption>
     </screenshot>
   </screenshots>
 
   <releases>
+    <release version="1.2.1" date="2026-09-01">
+      <description translate="no">
+        <p>Discover cursor themes inside selected parent folders</p>
+        <ul>
+          <li>Discover cursor themes inside selected parent folders</li>
+          <li>Load fallback cursor themes asynchronously</li>
+          <li>Fix Pango markup escaping in folder names and subtitles</li>
+          <li>Use default output directory when setting is empty</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.2.0" date="2026-07-20">
+      <description translate="no">
+        <p>OS-aware defaults and Windows installer</p>
+        <ul>
+          <li>OS-aware default output paths</li>
+          <li>Windows installer with app icon and no console window</li>
+          <li>Check ImageMagick version before conversion</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.1.0" date="2026-06-19">
+      <description translate="no">
+        <p>Bundled dependencies and packaging</p>
+        <ul>
+          <li>Flatpak bundles its own dependencies</li>
+          <li>DEB packaging in CI</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-05-26">
       <description translate="no">
         <p>Initial release</p>
