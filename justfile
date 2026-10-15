@@ -77,7 +77,7 @@ lint-manifest:
 
 # Lint exported ostree repo via flathub container (run after build with --repo=repo)
 lint-repo:
-    podman run --rm -v "{{justfile_directory()}}/repo:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged repo /work
+    podman run --rm -v "{{justfile_directory()}}/repo:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged repo /work; podman unshare chown -R 0:0 "{{justfile_directory()}}/repo"
 
 # Clean build caches and directories
 clean:
