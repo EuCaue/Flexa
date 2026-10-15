@@ -1,0 +1,716 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mapa Flexa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<!--
+  visual-thinking :: graph explorer template (ELK layout + SVG renderer)
+  Fill ONLY: <title> above and the JSON inside <script id="graph">. See formats.md for the schema.
+  ELK positions nodes, routes edges orthogonally and places edge labels without overlap; the page draws the result.
+  Everything else (tokens, layout, controls, theme, inspector) is the design system; do not restyle.
+-->
+<style>
+/* TOKENS:BEGIN  (source of truth: templates/_tokens.css; synced into each template by scripts/sync-tokens.py)
+   Design system of visual-thinking. Semantic tokens only; components never use literal colors.
+   Light is the base; dark redefines the same tokens. Both tested for contrast (design.md). */
+:root {
+  /* type */
+  --font-ui: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --fs-xs: 12px; --fs-sm: 12.5px; --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px;
+  --lh-tight: 1.25; --lh-body: 1.5;
+  --track-caps: 0.05em;
+
+  /* space (4px base) */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+
+  /* shape: one radius scale */
+  --r-control: 8px; --r-node: 10px; --r-panel: 14px;
+
+  /* surfaces */
+  --bg: #f6f7f9;            /* page ground, cool off-white */
+  --bg-elev: #ffffff;       /* panels */
+  --bg-inset: #eceff3;      /* wells, chips, group boxes */
+  --line: #e1e5eb;          /* hairlines */
+  --line-strong: #aeb7c4;   /* borders that must read */
+
+  /* text */
+  --fg: #171a20;
+  --fg-muted: #5a6373;      /* ≥ 4.5:1 on --bg and --bg-elev */
+  --fg-faint: #7c8696;      /* large text or non-essential only */
+
+  /* accent: one hue, used for selection, focus, links, control edges */
+  --accent: #2f5fc7;
+  --accent-fg: #ffffff;
+  --accent-soft: #e4ebfa;
+  --focus: #2f5fc7;
+
+  /* semantic state */
+  --ok: #257a4c;  --ok-soft: #e1f2e8;
+  --warn: #9a6207; --warn-soft: #f8edd5;
+  --danger: #b5382f; --danger-soft: #f9e3e0;
+
+  /* diagram: node kinds (fill, stroke) */
+  --n-entry-fill: var(--ok-soft);       --n-entry-stroke: var(--ok);
+  --n-component-fill: var(--accent-soft); --n-component-stroke: var(--accent);
+  --n-external-fill: var(--bg-inset);   --n-external-stroke: var(--line-strong);
+  --n-store-fill: var(--warn-soft);     --n-store-stroke: var(--warn);
+  --n-decision-fill: var(--bg-elev);    --n-decision-stroke: var(--accent);
+  --n-critical-fill: var(--danger-soft); --n-critical-stroke: var(--danger);
+  --n-group-fill: #ffffff;              --n-group-stroke: var(--line);
+
+  /* diagram: edge kinds */
+  --e-data: var(--warn);
+  --e-control: var(--accent);
+  --e-event: var(--ok);
+  --e-error: var(--danger);
+  --e-muted: var(--line-strong);
+
+  /* motion: one ease, three durations. Transitions start from the current value and stay interruptible. */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --d-fast: 120ms; --d-base: 200ms; --d-slow: 320ms;
+  --t-fast: var(--d-fast) var(--ease);
+  --t-base: var(--d-base) var(--ease);
+  --t-slow: var(--d-slow) var(--ease);
+
+  /* floating chrome: translucent material over the canvas, one shadow with offset and blur */
+  --chrome: rgba(255, 255, 255, 0.78);
+  --shadow-float: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px rgba(16, 24, 40, 0.07);
+
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1216; --bg-elev: #161a20; --bg-inset: #1d222a;
+    --line: #242a33; --line-strong: #4a5363;
+    --chrome: rgba(22, 26, 32, 0.78); --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --fg: #e7eaef; --fg-muted: #a3acba; --fg-faint: #7f8896;
+    --accent: #8fb0f3; --accent-fg: #0f1216; --accent-soft: #1d2a44; --focus: #8fb0f3;
+    --ok: #6cc695; --ok-soft: #16301f;
+    --warn: #e0b35a; --warn-soft: #332a12;
+    --danger: #ef8a7f; --danger-soft: #3a1c19;
+    --n-group-fill: #13171d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1216; --bg-elev: #161a20; --bg-inset: #1d222a;
+  --line: #242a33; --line-strong: #4a5363;
+  --chrome: rgba(22, 26, 32, 0.78); --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --fg: #e7eaef; --fg-muted: #a3acba; --fg-faint: #7f8896;
+  --accent: #8fb0f3; --accent-fg: #0f1216; --accent-soft: #1d2a44; --focus: #8fb0f3;
+  --ok: #6cc695; --ok-soft: #16301f;
+  --warn: #e0b35a; --warn-soft: #332a12;
+  --danger: #ef8a7f; --danger-soft: #3a1c19;
+  --n-group-fill: #13171d;
+  color-scheme: dark;
+}
+
+/* base: browser surfaces carry the design too */
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font: var(--fs-md)/var(--lh-body) var(--font-ui); -webkit-font-smoothing: antialiased; transition: background-color var(--t-base), color var(--t-base); }
+::selection { background: var(--accent-soft); color: var(--fg); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-control); }
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+button, input { font: inherit; color: inherit; }
+code, .mono { font-family: var(--font-data); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { :root { --d-fast: 0ms; --d-base: 0ms; --d-slow: 0ms; } * { animation: none !important; } }
+@media (prefers-reduced-transparency: reduce) { :root { --chrome: var(--bg-elev); } }
+/* TOKENS:END */
+
+body { display: flex; flex-direction: column; }
+
+/* header: title and wayfinding only */
+.top { display: flex; align-items: center; gap: var(--sp-4); padding: 14px var(--sp-5); background: var(--bg-elev); border-bottom: 1px solid var(--line); }
+.title-block { min-width: 0; flex: 1 1 auto; }
+.top h1 { font-size: var(--fs-xl); font-weight: 600; line-height: var(--lh-tight); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .sub { margin: 2px 0 0; color: var(--fg-muted); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg { display: inline-flex; padding: 2px; background: var(--bg-inset); border-radius: var(--r-control); gap: 2px; flex: 0 0 auto; }
+.seg button { background: transparent; border: 0; border-radius: calc(var(--r-control) - 2px); padding: 5px 12px; font-size: var(--fs-sm); color: var(--fg-muted); cursor: pointer; transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast); }
+.seg button:hover { color: var(--fg); }
+.seg button:active { transform: scale(0.97); }
+.seg button[aria-selected="true"], .seg button[aria-pressed="true"] { background: var(--bg-elev); color: var(--fg); font-weight: 500; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08); }
+.btn { background: transparent; border: 1px solid transparent; border-radius: var(--r-control); padding: 5px 10px; font-size: var(--fs-sm); color: var(--fg-muted); cursor: pointer; transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast), border-color var(--t-fast); white-space: nowrap; }
+.btn:hover { background: var(--bg-inset); color: var(--fg); }
+.btn:active { transform: scale(0.97); }
+.btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.btn.primary { border-color: var(--line-strong); color: var(--fg); }
+
+/* canvas and floating chrome */
+main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 340px; min-height: 0; }
+.canvas-wrap { position: relative; min-width: 0; min-height: 0; overflow: hidden; cursor: grab; touch-action: none; background: var(--bg); }
+.canvas-wrap:active { cursor: grabbing; }
+#canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.float { position: absolute; display: flex; align-items: center; gap: var(--sp-2); padding: 6px; background: var(--chrome); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); border-radius: calc(var(--r-control) + 4px); box-shadow: var(--shadow-float); }
+.float.tl { left: var(--sp-4); top: var(--sp-4); }
+.float.br { right: var(--sp-4); bottom: var(--sp-4); padding: 4px; }
+.float .btn { padding: 5px 9px; }
+.search { background: var(--bg-elev); border: 1px solid transparent; border-radius: var(--r-control); padding: 5px 10px; font-size: var(--fs-sm); width: 190px; transition: border-color var(--t-fast), width var(--t-base), box-shadow var(--t-fast); }
+.search::placeholder { color: var(--fg-faint); }
+.search:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); width: 240px; }
+.status { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--fg-muted); font-size: var(--fs-sm); max-width: 32ch; opacity: 0; transition: opacity var(--t-base); pointer-events: none; }
+.status.on { opacity: 1; pointer-events: auto; }
+.status .btn { margin-top: var(--sp-3); border-color: var(--line-strong); color: var(--fg); }
+.hint { position: absolute; left: 50%; bottom: var(--sp-4); transform: translateX(-50%); font-size: var(--fs-xs); color: var(--fg-faint); background: var(--chrome); backdrop-filter: blur(12px); border-radius: 999px; padding: 4px 12px; pointer-events: none; opacity: 0; transition: opacity var(--t-slow); }
+.hint.on { opacity: 1; }
+
+/* inspector */
+aside { border-left: 1px solid var(--line); background: var(--bg-elev); overflow: auto; padding: var(--sp-5) var(--sp-5) var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-6); min-width: 0; }
+aside h2 { font-size: var(--fs-xs); font-weight: 600; letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--fg-faint); margin-bottom: var(--sp-2); }
+#detail { transition: opacity var(--t-fast), transform var(--t-base); }
+#detail.swap { opacity: 0; transform: translateY(4px); }
+.name { font-size: var(--fs-lg); font-weight: 600; line-height: var(--lh-tight); letter-spacing: -0.01em; }
+.sub2 { color: var(--fg-muted); margin-top: 3px; }
+.file { font-family: var(--font-data); font-size: var(--fs-sm); color: var(--accent); word-break: break-all; margin-top: var(--sp-2); }
+.tags { display: flex; gap: var(--sp-1); flex-wrap: wrap; margin-top: var(--sp-3); }
+.tag { font-size: var(--fs-xs); padding: 2px 9px; border-radius: 999px; background: var(--bg-inset); color: var(--fg-muted); }
+.tag.verified { color: var(--ok); background: var(--ok-soft); }
+.tag.inferred { color: var(--warn); background: var(--warn-soft); }
+.tag.unknown { color: var(--danger); background: var(--danger-soft); }
+.stats { color: var(--fg-muted); font-size: var(--fs-sm); margin-top: var(--sp-3); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--fg); font-weight: 500; }
+.prose { margin: 0; font-size: var(--fs-sm); line-height: var(--lh-body); max-width: 60ch; }
+.empty { color: var(--fg-muted); font-size: var(--fs-sm); }
+ul { margin: 0; padding-left: 18px; } li { margin: var(--sp-1) 0; }
+.rows { list-style: none; padding: 0; margin: 0; }
+.rows li { margin: 0; }
+.rows button { display: flex; align-items: baseline; gap: var(--sp-2); width: 100%; text-align: left; background: none; border: 0; padding: 7px var(--sp-2); margin: 0 calc(-1 * var(--sp-2)); border-radius: var(--r-control); color: var(--fg); cursor: pointer; font-size: var(--fs-sm); transition: background var(--t-fast), transform var(--t-fast); }
+.rows button:hover { background: var(--bg-inset); }
+.rows button:active { transform: scale(0.99); }
+.rows i { display: block; width: 12px; height: 0; border-top: 2px solid; flex: 0 0 12px; position: relative; top: -3px; }
+.rows b { font-weight: 500; }
+.rows code { color: var(--fg-muted); font-size: var(--fs-xs); }
+.rows .d { display: block; color: var(--fg-muted); font-size: var(--fs-xs); margin-top: 1px; }
+.rows .chev { margin-left: auto; color: var(--fg-faint); }
+.legend { display: flex; flex-direction: column; gap: 2px; }
+.legend button { display: flex; align-items: center; gap: var(--sp-2); background: none; border: 0; padding: 5px var(--sp-2); margin: 0 calc(-1 * var(--sp-2)); border-radius: var(--r-control); color: var(--fg-muted); font-size: var(--fs-sm); cursor: pointer; text-align: left; transition: background var(--t-fast), opacity var(--t-fast), transform var(--t-fast); }
+.legend button:hover { background: var(--bg-inset); color: var(--fg); }
+.legend button:active { transform: scale(0.99); }
+.legend button[aria-pressed="false"] { opacity: .4; }
+.legend button[aria-pressed="false"] span { text-decoration: line-through; }
+.legend .sw { width: 16px; height: 12px; border-radius: 4px; border: 1.5px solid; flex: 0 0 16px; }
+.legend .sw.line { height: 0; border: 0; border-top: 2px solid; }
+.legend .sw.plain { border-color: var(--line-strong); }
+.legend .n { margin-left: auto; color: var(--fg-faint); font-variant-numeric: tabular-nums; font-size: var(--fs-xs); font-style: normal; }
+.row { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); }
+@media (max-width: 820px) {
+  main { grid-template-columns: 1fr; grid-template-rows: minmax(300px, 1fr) auto; }
+  aside { border-left: 0; border-top: 1px solid var(--line); max-height: 45vh; padding: var(--sp-4); }
+  .top { flex-wrap: wrap; } .top h1, .top .sub { white-space: normal; }
+  .float.tl { right: var(--sp-4); flex-wrap: wrap; } .search { width: 100%; }
+}
+
+/* drawing: every color from tokens, so the theme toggle is pure CSS */
+#world { transition: opacity var(--t-base); }
+#world.anim, #world.anim * { transition-property: transform, opacity; transition-duration: var(--d-slow); transition-timing-function: var(--ease); }
+#world.fade { opacity: 0; }
+#canvas text { font-family: var(--font-ui); fill: var(--fg); pointer-events: none; }
+.grp > rect { fill: var(--n-group-fill); stroke: var(--line); stroke-width: 1; transition: stroke var(--t-fast); }
+.grp:hover > rect { stroke: var(--line-strong); }
+.grp > text { font-size: 11px; font-weight: 600; letter-spacing: var(--track-caps); text-transform: uppercase; fill: var(--fg-faint); }
+.grp > text.chev { fill: var(--fg-faint); font-weight: 400; letter-spacing: 0; text-transform: none; }
+.nd { cursor: pointer; }
+.nd > rect { stroke-width: 1; transition: stroke var(--t-fast), stroke-width var(--t-fast), filter var(--t-fast); }
+.nd:hover > rect { stroke-width: 1.5; }
+.nd.k-entry > rect { fill: var(--n-entry-fill); stroke: var(--n-entry-stroke); }
+.nd.k-component > rect { fill: var(--n-component-fill); stroke: var(--n-component-stroke); }
+.nd.k-external > rect { fill: var(--n-external-fill); stroke: var(--n-external-stroke); stroke-dasharray: 5 3; }
+.nd.k-store > rect, .nd.k-queue > rect { fill: var(--n-store-fill); stroke: var(--n-store-stroke); }
+.nd.k-decision > rect { fill: var(--n-decision-fill); stroke: var(--n-decision-stroke); }
+.nd.k-error > rect { fill: var(--n-critical-fill); stroke: var(--n-critical-stroke); stroke-dasharray: 5 3; }
+.nd.k-critical > rect { fill: var(--n-critical-fill); stroke: var(--n-critical-stroke); stroke-width: 2; }
+.nd.s-inferred > rect { stroke-dasharray: 3 3; }
+.nd.s-unknown > rect { stroke-dasharray: 1.5 3; opacity: .75; }
+.nd .ring { fill: none; stroke: var(--accent); stroke-width: 6; opacity: 0; transition: opacity var(--t-fast); }
+.nd.sel > rect { stroke: var(--accent); stroke-width: 2; }
+.nd.sel .ring { opacity: .22; }
+.nd text.nm { font-size: 12px; font-weight: 600; }
+.nd text.sb { font-size: 11.5px; fill: var(--fg-muted); }
+.nd text.fl { font-family: var(--font-data); font-size: 11px; fill: var(--accent); }
+.nd .glyph { fill: none; stroke: var(--n-store-stroke); stroke-width: 1.2; opacity: .8; }
+.ed { fill: none; stroke-width: 1.5; transition: opacity var(--t-fast), stroke-width var(--t-fast); }
+.ed.e-data { stroke: var(--e-data); marker-end: url(#m-data); }
+.ed.e-control { stroke: var(--e-control); marker-end: url(#m-control); }
+.ed.e-event { stroke: var(--e-event); stroke-dasharray: 6 4; marker-end: url(#m-event); }
+.ed.e-error { stroke: var(--e-error); stroke-dasharray: 2 3; marker-end: url(#m-error); }
+.ed.hl { stroke-width: 2.5; }
+#m-data path { fill: var(--e-data); } #m-control path { fill: var(--e-control); } #m-event path { fill: var(--e-event); } #m-error path { fill: var(--e-error); }
+.el rect { fill: var(--bg-elev); stroke: var(--line); stroke-width: 1; }
+.el text { font-family: var(--font-data); font-size: 11.5px; fill: var(--fg); }
+.el .step { font-weight: 600; fill: var(--accent); }
+.dim { opacity: .16; }
+.nd, .ed, .el { transition: opacity var(--t-base); }
+</style>
+
+<header class="top">
+  <div class="title-block">
+    <h1 id="title"></h1>
+    <p class="sub" id="subtitle"></p>
+  </div>
+  <nav class="seg" id="views" aria-label="Vistas" hidden></nav>
+  <button type="button" class="btn" id="btnTheme" title="Tema: automático, claro, escuro" aria-live="polite">Auto</button>
+</header>
+<main>
+  <section class="canvas-wrap" id="wrap">
+    <svg id="canvas" role="img" aria-label="Diagrama interativo">
+      <defs>
+        <marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker>
+        <marker id="m-control" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker>
+        <marker id="m-event" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker>
+        <marker id="m-error" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker>
+      </defs>
+      <g id="world"></g>
+    </svg>
+    <div class="float tl">
+      <div class="seg" role="group" aria-label="Nível de informação">
+        <button type="button" data-level="1" aria-pressed="false" title="Nomes e grupos">Mapa</button>
+        <button type="button" data-level="2" aria-pressed="true" title="Responsabilidades e rótulos">Contexto</button>
+        <button type="button" data-level="3" aria-pressed="false" title="Arquivos, passos e status">Detalhes</button>
+      </div>
+      <input class="search" id="q" type="search" placeholder="Buscar nó ou arquivo" aria-label="Buscar nó ou arquivo">
+    </div>
+    <div class="float br" role="group" aria-label="Zoom e layout">
+      <button type="button" class="btn" id="btnOut" title="Menos zoom (−)" aria-label="Menos zoom">−</button>
+      <button type="button" class="btn" id="btnFit" title="Ajustar à tela (f)">Ajustar</button>
+      <button type="button" class="btn" id="btnIn" title="Mais zoom (+)" aria-label="Mais zoom">+</button>
+      <button type="button" class="btn" id="btnDir" title="Alternar direção do layout (d)">Direção</button>
+    </div>
+    <div class="status" id="status" aria-live="polite"></div>
+    <div class="hint" id="hint">arraste para mover · roda para zoom · clique para inspecionar</div>
+  </section>
+  <aside>
+    <section id="detail"></section>
+    <section><h2>Legenda · filtro</h2><div class="legend" id="legend"></div></section>
+    <section id="annotations" hidden><h2>Anotações</h2><ul id="annList"></ul></section>
+  </aside>
+</main>
+
+<script id="graph" type="application/json">
+{
+  "title": "Flexa converte temas de cursor, um folder por thread",
+  "subtitle": "app único GTK4/LibAdwaita · lido em src/ · 2026-10-10",
+  "basis": "code",
+  "summary": "Aplicação de desktop em um único processo GTK4. O usuário arrasta pastas, o app valida cada pasta, enfileira e converte por subprocesso: win2xcur para Windows→Linux, x2wincurtheme para o caminho inverso. GSettings guarda os diretórios de saída.",
+  "views": [
+    {
+      "id": "main", "title": "Arquitetura", "direction": "RIGHT",
+      "summary": "Evento entra pela janela, o app valida a pasta, a fila do conversor processa uma pasta por worker via Gio.Task e chama o subprocesso; o resultado repinta a linha via spinner/check/error.",
+      "groups": [
+        { "id": "conv", "label": "src/cursor_converter.py", "file": "src/cursor_converter.py" }
+      ],
+      "nodes": [
+        { "id": "user", "label": "Usuário", "sub": "arrasta pasta ou clica +", "kind": "external", "status": "verified" },
+        { "id": "app", "label": "FlexaApplication", "sub": "valida pastas, enfilera conversão", "kind": "entry", "file": "src/main.py", "status": "verified" },
+        { "id": "prefs", "label": "FlexaPreferencesDialog", "sub": "define saída e fallback", "kind": "component", "file": "src/preferences.py", "status": "verified" },
+        { "id": "settings", "label": "GSettings", "sub": "output-dir, fallback-theme-path", "kind": "store", "status": "verified" },
+        { "id": "base", "label": "BaseCursorConverter", "sub": "fila Gio.Task, cancel por folder", "kind": "component", "group": "conv", "file": "src/cursor_converter.py", "status": "verified" },
+        { "id": "toLinux", "label": "CursorConverter", "sub": "win2xcur, escreve index.theme e symlinks", "kind": "component", "group": "conv", "file": "src/cursor_converter.py", "status": "verified" },
+        { "id": "toWin", "label": "ReverseCursorConverter", "sub": "x2wincurtheme, copia .cur/.ani faltantes", "kind": "component", "group": "conv", "file": "src/cursor_converter.py", "status": "verified" },
+        { "id": "win2xcur", "label": "win2xcur", "sub": "converte .cur/.ani para Xcursor", "kind": "external", "status": "verified" },
+        { "id": "x2wincurtheme", "label": "x2wincurtheme", "sub": "Xcursor para .cur/.ani", "kind": "external", "status": "verified" },
+        { "id": "imagemagick", "label": "ImageMagick", "sub": "7.0+, versão checada no app", "kind": "external", "status": "verified" },
+        { "id": "outputs", "label": "Temas convertidos", "sub": "~/.local/share/icons ou ~/Documents/Windows Cursors", "kind": "store", "status": "verified" }
+      ],
+      "edges": [
+        { "from": "user", "to": "app", "label": "drop ou botão +", "kind": "control", "step": 1 },
+        { "from": "app", "to": "base", "label": "add_many → start", "kind": "control", "step": 2 },
+        { "from": "base", "to": "toLinux", "label": "herda, roda _worker", "kind": "control", "step": 3 },
+        { "from": "base", "to": "toWin", "label": "ou roda _worker", "kind": "control", "step": 3 },
+        { "from": "toLinux", "to": "win2xcur", "label": "spawnv por arquivo", "kind": "control", "step": 4, "detail": "Gio.Subprocess, um chamada por cursor; temporário em cursors/" },
+        { "from": "toWin", "to": "x2wincurtheme", "label": "ou spawnv uma vez", "kind": "control", "step": 4 },
+        { "from": "app", "to": "imagemagick", "label": "conferir versão pré-conversão", "kind": "control", "step": 5, "detail": "subprocess magick -version, timeout 5s, falha interrompe a conversão" },
+        { "from": "app", "to": "settings", "label": "get_string", "kind": "data", "step": 6 },
+        { "from": "prefs", "to": "settings", "label": "salva caminhos", "kind": "data" },
+        { "from": "toLinux", "to": "outputs", "label": "temas + index.theme", "kind": "data", "step": 7 },
+        { "from": "toWin", "to": "outputs", "label": "escreve .cur/.ani", "kind": "data", "step": 7 },
+        { "from": "base", "to": "app", "label": "on_progress, on_all_done", "kind": "event", "step": 8, "detail": "Gio.Task devolve callback no loop principal; repinta a linha spinner/check/erro" }
+      ],
+      "annotations": [
+        "BaseCursorConverter processa um pasta por vez: thread GLib por tema via Gio.Task, callbacks no loop principal. Fila sequencial, não paralela.",
+        "Toda falha de conversão gera conversion-error.txt dentro da pasta de saída, com PATH para diagnóstico.",
+        "Flexa resolve caminhos do host dentro de flatpak: /usr/share/icons→/run/host/share/icons (SANDBOX_PATH_REPLACEMENTS).",
+        "No instalador Windows (PyInstaller, flexa.iss), x2wincurtheme roda em-processo via import, para evitar setup de DLL num subprocesso.",
+        "Cancelamento: Gio.Cancellable por pasta e um global; remover uma linha cancela o subprocesso em andamento."
+      ]
+    }
+  ]
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+<script>
+(function () {
+  'use strict';
+  var G = JSON.parse(document.getElementById('graph').textContent);
+  var views = G.views || [Object.assign({ id: 'main', title: G.title }, G)];
+  var root = document.documentElement, SVG = 'http://www.w3.org/2000/svg';
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var tok = function (n) { return getComputedStyle(root).getPropertyValue(n).trim(); };
+  var ms = function (n) { return parseFloat(tok(n)) || 0; };
+  var el = function (tag, attrs, parent) { var e = document.createElementNS(SVG, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+  // ---------- theme: system until the viewer picks; the pick persists. Drawing is CSS, so no redraw.
+  var THEMES = ['auto', 'light', 'dark'], NAMES = { auto: 'Auto', light: 'Claro', dark: 'Escuro' };
+  var theme = store.get('vt-theme') || 'auto';
+  function applyTheme(t) {
+    if (t === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+    $('btnTheme').textContent = NAMES[t]; $('btnTheme').title = 'Tema: ' + NAMES[t].toLowerCase() + '. Clique para alternar.';
+    store.set('vt-theme', t); buildLegend();
+  }
+  $('btnTheme').onclick = function () { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; applyTheme(theme); };
+
+  // ---------- vocabulary
+  var KINDS = {
+    entry:     { fill: '--n-entry-fill', stroke: '--n-entry-stroke', label: 'Entrada' },
+    component: { fill: '--n-component-fill', stroke: '--n-component-stroke', label: 'Componente' },
+    external:  { fill: '--n-external-fill', stroke: '--n-external-stroke', label: 'Sistema externo', dash: true },
+    store:     { fill: '--n-store-fill', stroke: '--n-store-stroke', label: 'Banco de dados' },
+    queue:     { fill: '--n-store-fill', stroke: '--n-store-stroke', label: 'Fila ou broker' },
+    decision:  { fill: '--n-decision-fill', stroke: '--n-decision-stroke', label: 'Decisão' },
+    error:     { fill: '--n-critical-fill', stroke: '--n-critical-stroke', label: 'Saída de erro', dash: true },
+    critical:  { fill: '--n-critical-fill', stroke: '--n-critical-stroke', label: 'Ponto crítico' }
+  };
+  var EDGES = {
+    data:    { color: '--e-data', style: 'solid', label: 'Dados' },
+    control: { color: '--e-control', style: 'solid', label: 'Chamada síncrona' },
+    event:   { color: '--e-event', style: 'dashed', label: 'Evento assíncrono' },
+    error:   { color: '--e-error', style: 'dotted', label: 'Caminho de erro' }
+  };
+  var BASIS = {
+    code:     { verified: 'Verificado no código', inferred: 'Inferido', unknown: 'Desconhecido' },
+    docs:     { verified: 'Conforme documentação', inferred: 'Interpretação', unknown: 'Não documentado' },
+    proposal: { verified: 'Decidido', inferred: 'Sugerido', unknown: 'Em aberto' }
+  };
+  var STATUS = BASIS[G.basis] || BASIS.code;
+
+  // ---------- state
+  var level = 2, dir = 'RIGHT', current = null, hiddenKinds = {}, focused = null, selected = null, hover = null;
+  var M = { nodes: {}, groups: {}, edges: [], out: {}, inc: {} };
+  var L = null, lastPos = {};
+  var world = $('world'), wrap = $('wrap'), canvas = $('canvas'), statusEl = $('status');
+  var s = 1, tx = 0, ty = 0;
+  $('title').textContent = G.title || ''; $('subtitle').textContent = G.subtitle || '';
+  document.title = document.title || G.title || 'Diagrama';
+
+  // ---------- views (segmented control)
+  var viewsEl = $('views');
+  if (views.length > 1) {
+    viewsEl.hidden = false;
+    views.forEach(function (v) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = v.title || v.id; b.setAttribute('role', 'tab');
+      b.onclick = function () { loadView(v.id); }; b.dataset.view = v.id; viewsEl.appendChild(b);
+    });
+  }
+
+  // ---------- text measurement (fonts awaited before the first layout)
+  var ctx = document.createElement('canvas').getContext('2d'), FONT = {};
+  function setFonts() { FONT = { nm: '600 12px ' + tok('--font-ui'), sb: '11.5px ' + tok('--font-ui'), fl: '11px ' + tok('--font-data'), el: '11.5px ' + tok('--font-data'), gp: '600 11px ' + tok('--font-ui') }; }
+  function width(text, font) { ctx.font = font; return ctx.measureText(text).width; }
+  function wrapText(text, font, max) {
+    var words = String(text).split(/\s+/), lines = [], cur = '';
+    words.forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (width(t, font) <= max || !cur) cur = t; else { lines.push(cur); cur = w; } });
+    if (cur) lines.push(cur); return lines;
+  }
+  function nodeText(n) {
+    var lines = [{ t: n.name, f: 'nm' }];
+    if (level >= 2 && n.sub) wrapText(n.sub, FONT.sb, 200).forEach(function (l) { lines.push({ t: l, f: 'sb' }); });
+    if (level >= 3 && n.file) lines.push({ t: n.file, f: 'fl' });
+    return lines;
+  }
+  function edgeText(e) { return level < 2 ? '' : ((level >= 3 && e.step != null ? e.step + '  ' : '') + (e.label || '')); }
+
+  // ---------- model
+  function loadView(id) {
+    var v = views.filter(function (x) { return x.id === id; })[0] || views[0];
+    var changed = current && current !== v;
+    current = v; dir = v.direction || 'RIGHT'; focused = null; selected = null; hiddenKinds = {}; $('q').value = ''; lastPos = {};
+    Array.prototype.forEach.call(viewsEl.children, function (b) { b.setAttribute('aria-selected', b.dataset.view === v.id ? 'true' : 'false'); });
+    M = { nodes: {}, groups: {}, edges: [], out: {}, inc: {} };
+    var used = {};
+    (v.nodes || []).forEach(function (n) { if (n.group) used[n.group] = 1; });
+    (v.groups || []).forEach(function (g) {
+      if (!used[g.id]) { console.warn('visual-thinking: group "' + g.id + '" has no nodes and was dropped'); return; }
+      M.groups[g.id] = { id: g.id, name: g.label, file: g.file || '', view: g.view || '', sub: g.sub || '' };
+    });
+    (v.nodes || []).forEach(function (n) {
+      M.nodes[n.id] = { id: n.id, name: n.label, sub: n.sub || '', file: n.file || '', kind: KINDS[n.kind] ? n.kind : 'component', status: n.status || 'verified',
+        notes: n.notes || [], evidence: n.evidence || '', view: n.view || '', group: n.group && used[n.group] ? n.group : '' };
+      M.out[n.id] = []; M.inc[n.id] = [];
+    });
+    (v.edges || []).forEach(function (e, i) {
+      if (!M.nodes[e.from] || !M.nodes[e.to]) { console.warn('visual-thinking: edge ' + e.from + ' -> ' + e.to + ' references a missing node and was dropped'); return; }
+      var E = { id: 'e' + i, from: e.from, to: e.to, label: e.label || '', detail: e.detail || '', kind: EDGES[e.kind] ? e.kind : 'control', step: e.step };
+      M.edges.push(E); M.out[e.from].push(E); M.inc[e.to].push(E);
+    });
+    buildLegend(); showSummary(true);
+    var ann = $('annotations'); var list = $('annList'); list.innerHTML = '';
+    if (v.annotations && v.annotations.length) { ann.hidden = false; v.annotations.forEach(function (a) { var li = document.createElement('li'); li.textContent = a; list.appendChild(li); }); } else ann.hidden = true;
+    if (changed) { world.classList.add('fade'); setTimeout(function () { render(true).then(function () { world.classList.remove('fade'); }); }, ms('--d-fast')); }
+    else render(true);
+  }
+  function visibleNodes() {
+    return Object.keys(M.nodes).filter(function (id) {
+      var n = M.nodes[id];
+      if (hiddenKinds[n.kind]) return false;
+      if (focused) { if (id === focused) return true; return M.out[focused].some(function (e) { return e.to === id; }) || M.inc[focused].some(function (e) { return e.from === id; }); }
+      return true;
+    });
+  }
+
+  // ---------- layout with ELK: nodes sized from text, edge labels as first-class layout objects
+  var elk = new ELK();
+  function buildElkGraph(ids) {
+    var vis = {}; ids.forEach(function (id) { vis[id] = 1; });
+    var children = [], byGroup = {};
+    ids.forEach(function (id) {
+      var n = M.nodes[id], lines = nodeText(n);
+      var w = Math.max(120, Math.ceil(Math.max.apply(null, lines.map(function (l) { return width(l.t, FONT[l.f]); })) + 32));
+      var h = 20 + lines.length * 16; n._lines = lines;
+      var node = { id: id, width: w, height: h };
+      if (n.group) { (byGroup[n.group] = byGroup[n.group] || []).push(node); } else children.push(node);
+    });
+    Object.keys(byGroup).forEach(function (gid) {
+      var g = M.groups[gid]; var lw = width(g.name.toUpperCase(), FONT.gp) + (g.view ? 16 : 0);
+      children.push({ id: 'g_' + gid, children: byGroup[gid], labels: [{ text: g.name, width: lw + 8, height: 14 }],
+        layoutOptions: { 'elk.padding': '[top=44,left=20,bottom=20,right=20]', 'elk.nodeLabels.placement': 'INSIDE V_TOP H_LEFT' } });
+    });
+    var edges = M.edges.filter(function (e) { return vis[e.from] && vis[e.to]; }).map(function (e) {
+      var t = edgeText(e); var ed = { id: e.id, sources: [e.from], targets: [e.to] };
+      if (t) ed.labels = [{ text: t, width: Math.ceil(width(t, FONT.el)) + 14, height: 20 }];
+      return ed;
+    });
+    return { id: 'root', children: children, edges: edges, layoutOptions: {
+      'elk.algorithm': 'layered', 'elk.direction': dir, 'elk.edgeRouting': 'ORTHOGONAL', 'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+      'elk.spacing.nodeNode': '36', 'elk.layered.spacing.nodeNodeBetweenLayers': '76', 'elk.spacing.edgeNode': '26', 'elk.spacing.edgeEdge': '18',
+      'elk.layered.spacing.edgeNodeBetweenLayers': '30', 'elk.layered.spacing.edgeEdgeBetweenLayers': '18',
+      'elk.spacing.edgeLabel': '6', 'elk.edgeLabels.inline': 'true', 'elk.edgeLabels.placement': 'CENTER',
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX', 'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.layered.thoroughness': '50', 'elk.layered.crossingMinimization.greedySwitch.type': 'TWO_SIDED',
+      'elk.layered.crossingMinimization.greedySwitchHierarchical.type': 'TWO_SIDED', 'elk.layered.cycleBreaking.strategy': 'GREEDY_MODEL_ORDER',
+      'elk.padding': '[top=16,left=16,bottom=16,right=16]'
+    } };
+  }
+  var renderSeq = 0, busyTimer = null;
+  function setStatus(html) { statusEl.innerHTML = html || ''; statusEl.classList.toggle('on', !!html); }
+  function render(fitAfter) {
+    var seq = ++renderSeq, ids = visibleNodes();
+    if (!ids.length) { world.innerHTML = ''; L = null; setStatus('<div>Nenhum nó visível com os filtros atuais.</div><button type="button" class="btn" id="btnReset">Limpar filtros</button>'); var br = $('btnReset'); if (br) br.onclick = resetFilters; return Promise.resolve(); }
+    clearTimeout(busyTimer); busyTimer = setTimeout(function () { if (seq === renderSeq) setStatus('Calculando layout…'); }, 300);
+    wrap.setAttribute('aria-busy', 'true');
+    return elk.layout(buildElkGraph(ids)).then(function (out) {
+      clearTimeout(busyTimer); if (seq !== renderSeq) return; setStatus(''); wrap.removeAttribute('aria-busy');
+      var abs = {};
+      (out.children || []).forEach(function (c) { c._ax = c.x; c._ay = c.y; abs[c.id] = c; (c.children || []).forEach(function (k) { k._ax = c.x + k.x; k._ay = c.y + k.y; abs[k.id] = k; }); });
+      L = { out: out, abs: abs, w: out.width, h: out.height };
+      draw(out, abs);
+      if (fitAfter) fit(true); else apply();
+    }).catch(function (err) { clearTimeout(busyTimer); wrap.removeAttribute('aria-busy'); console.error('visual-thinking: layout failed', err); setStatus('<div>O layout falhou. Veja o console para o motivo.</div>'); });
+  }
+  function resetFilters() { hiddenKinds = {}; focused = null; $('q').value = ''; buildLegend(); render(true); }
+
+  // ---------- drawing. Nodes carry a transform so a re-layout glides them to the new place (FLIP); edges and labels fade in.
+  function draw(out, abs) {
+    var prev = lastPos; lastPos = {};
+    world.classList.remove('anim'); world.innerHTML = '';
+    (out.children || []).forEach(function (c) {
+      if (!c.children) return;
+      var gid = c.id.slice(2), g = M.groups[gid];
+      var grp = el('g', { 'class': 'grp', 'data-id': 'g_' + gid, transform: 'translate(' + c.x + ' ' + c.y + ')' }, world);
+      el('rect', { x: 0, y: 0, width: c.width, height: c.height, rx: 14 }, grp);
+      el('text', { x: 18, y: 24 }, grp).textContent = g.name;
+      if (g.view) el('text', { 'class': 'chev', x: 18 + width(g.name.toUpperCase(), FONT.gp) + 8, y: 24 }, grp).textContent = '›';
+      grp.style.cursor = 'pointer';
+      grp.addEventListener('click', function (ev) { ev.stopPropagation(); select(null, true); showGroup(g); });
+      grp.addEventListener('dblclick', function () { if (g.view) loadView(g.view); });
+      prev['g_' + gid] ? 0 : grp.classList.add('fresh'); lastPos['g_' + gid] = { x: c.x, y: c.y };
+      if (prev['g_' + gid]) { grp.setAttribute('transform', 'translate(' + prev['g_' + gid].x + ' ' + prev['g_' + gid].y + ')'); grp._to = 'translate(' + c.x + ' ' + c.y + ')'; }
+    });
+    var edgesG = el('g', { 'class': 'edges' }, world), labelsG = el('g', { 'class': 'labels' }, world);
+    (out.edges || []).forEach(function (e) {
+      var E = M.edges.filter(function (x) { return x.id === e.id; })[0]; if (!E || !e.sections) return;
+      var ox = 0, oy = 0; if (e.container && e.container !== 'root' && abs[e.container]) { ox = abs[e.container]._ax; oy = abs[e.container]._ay; }
+      var d = e.sections.map(function (sec) { var pts = [sec.startPoint].concat(sec.bendPoints || [], [sec.endPoint]); return pts.map(function (p, i) { return (i ? 'L' : 'M') + (p.x + ox).toFixed(1) + ' ' + (p.y + oy).toFixed(1); }).join(' '); }).join(' ');
+      el('path', { d: d, 'class': 'ed e-' + E.kind, 'data-id': E.id, 'data-from': E.from, 'data-to': E.to }, edgesG);
+      (e.labels || []).forEach(function (lb) {
+        var lg = el('g', { 'class': 'el', 'data-edge': E.id, 'data-from': E.from, 'data-to': E.to }, labelsG);
+        el('rect', { x: lb.x + ox, y: lb.y + oy, width: lb.width, height: lb.height, rx: 6 }, lg);
+        var t = el('text', { x: lb.x + ox + 7, y: lb.y + oy + 14 }, lg);
+        if (level >= 3 && E.step != null) { el('tspan', { 'class': 'step' }, t).textContent = E.step + '  '; el('tspan', {}, t).textContent = E.label; } else t.textContent = lb.text;
+      });
+    });
+    var nodesG = el('g', { 'class': 'nodes' }, world);
+    Object.keys(abs).forEach(function (id) {
+      var n = M.nodes[id]; if (!n) return; var c = abs[id];
+      var ng = el('g', { 'class': 'nd k-' + n.kind + ' s-' + n.status + (selected === id ? ' sel' : ''), 'data-id': id, tabindex: 0, role: 'button', 'aria-label': n.name, transform: 'translate(' + c._ax + ' ' + c._ay + ')' }, nodesG);
+      el('rect', { 'class': 'ring', x: -3, y: -3, width: c.width + 6, height: c.height + 6, rx: 13 }, ng);
+      el('rect', { x: 0, y: 0, width: c.width, height: c.height, rx: 10 }, ng);
+      if (n.kind === 'store') el('path', { 'class': 'glyph', d: 'M10 7 h' + (c.width - 20) }, ng);
+      if (n.kind === 'queue') el('path', { 'class': 'glyph', d: 'M10 7 h' + (c.width - 20) + ' M10 ' + (c.height - 7) + ' h' + (c.width - 20) }, ng);
+      n._lines.forEach(function (ln, i) { el('text', { 'class': ln.f, x: c.width / 2, y: 22 + i * 16, 'text-anchor': 'middle' }, ng).textContent = ln.t; });
+      ng.addEventListener('click', function (ev) { ev.stopPropagation(); select(id); });
+      ng.addEventListener('dblclick', function () { if (n.view) loadView(n.view); });
+      ng.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(id); } });
+      ng.addEventListener('mouseenter', function () { hover = id; applyDim(); });
+      ng.addEventListener('mouseleave', function () { hover = null; applyDim(); });
+      lastPos[id] = { x: c._ax, y: c._ay, w: c.width, h: c.height };
+      if (prev[id]) { ng.setAttribute('transform', 'translate(' + prev[id].x + ' ' + prev[id].y + ')'); ng._to = 'translate(' + c._ax + ' ' + c._ay + ')'; }
+    });
+    // FLIP: elements start at their previous place; next frame they glide to the new one. Edges and labels fade in meanwhile.
+    var moving = world.querySelectorAll('.nd, .grp'); edgesG.style.opacity = 0; labelsG.style.opacity = 0;
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      world.classList.add('anim');
+      moving.forEach(function (g) { if (g._to) g.setAttribute('transform', g._to); });
+      edgesG.style.opacity = ''; labelsG.style.opacity = '';
+      setTimeout(function () { world.classList.remove('anim'); }, ms('--d-slow') + 20);
+    }); });
+    applyDim();
+  }
+  function neighborhood(id) { var set = {}; set[id] = 1; M.out[id].forEach(function (e) { set[e.to] = 1; }); M.inc[id].forEach(function (e) { set[e.from] = 1; }); return set; }
+  function matchQ(id, q) { var n = M.nodes[id]; return !!n && (n.name + ' ' + n.sub + ' ' + n.file).toLowerCase().indexOf(q) >= 0; }
+  function applyDim() {
+    var q = $('q').value.trim().toLowerCase(), nb = hover ? neighborhood(hover) : null, hits = 0;
+    world.querySelectorAll('.nd').forEach(function (g) { var id = g.dataset.id, hit = !q || matchQ(id, q); if (hit) hits++; g.classList.toggle('dim', (nb && !nb[id]) || !hit); });
+    world.querySelectorAll('.ed, .el').forEach(function (p) {
+      var inNb = !!nb && (p.dataset.from === hover || p.dataset.to === hover);
+      p.classList.toggle('dim', (nb && !inNb) || (q && !(matchQ(p.dataset.from, q) || matchQ(p.dataset.to, q))));
+      p.classList.toggle('hl', inNb);
+    });
+    if (q && !hits && L) setStatus('<div>Nada encontrado para "' + esc(q) + '".</div>'); else if (L) setStatus('');
+  }
+
+  // ---------- pan and zoom. Wheel and drag track 1:1; buttons and fit glide.
+  function apply(animated) {
+    if (animated && ms('--d-slow')) { world.style.transition = 'transform ' + tok('--t-slow'); setTimeout(function () { world.style.transition = ''; }, ms('--d-slow') + 20); }
+    world.setAttribute('transform', 'translate(' + tx + ' ' + ty + ') scale(' + s + ')');
+  }
+  function fit(animated) {
+    if (!L) return; var vw = wrap.clientWidth, vh = wrap.clientHeight;
+    s = Math.min((vw - 64) / L.w, (vh - 120) / L.h, 1.25); tx = (vw - L.w * s) / 2; ty = (vh - L.h * s) / 2 + 16; apply(animated);
+  }
+  function zoomBy(k, cx, cy, animated) { var r = wrap.getBoundingClientRect(); var mx = cx == null ? r.width / 2 : cx, my = cy == null ? r.height / 2 : cy; var ns = Math.min(3, Math.max(0.15, s * k)); k = ns / s; tx = mx - (mx - tx) * k; ty = my - (my - ty) * k; s = ns; apply(animated); }
+  wrap.addEventListener('wheel', function (e) { e.preventDefault(); var r = wrap.getBoundingClientRect(); zoomBy(e.deltaY < 0 ? 1.1 : 0.9, e.clientX - r.left, e.clientY - r.top, false); }, { passive: false });
+  var drag = null;
+  // Pan starts only after the pointer moves 4px, and never from the floating controls, so clicks on nodes and buttons stay clicks.
+  wrap.addEventListener('pointerdown', function (e) { if (e.button !== 0 || e.target.closest('.float, .status')) return; drag = { x: e.clientX - tx, y: e.clientY - ty, sx: e.clientX, sy: e.clientY, id: e.pointerId, moved: false }; });
+  wrap.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    if (!drag.moved) { if (Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) < 4) return; drag.moved = true; try { wrap.setPointerCapture(drag.id); } catch (err) {} }
+    tx = e.clientX - drag.x; ty = e.clientY - drag.y; apply(false);
+  });
+  var endDrag = function () { var was = drag; setTimeout(function () { if (drag === was) drag = null; }, 0); };
+  wrap.addEventListener('pointerup', endDrag); wrap.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('click', function (e) { if (drag && drag.moved) return; if (e.target === canvas || e.target === world) select(null); });
+  new ResizeObserver(function () { if (L) fit(false); }).observe(wrap);
+  function centerOn(id) { var p = lastPos[id]; if (!p) return; var vw = wrap.clientWidth, vh = wrap.clientHeight; var cx = (p.x + p.w / 2) * s + tx, cy = (p.y + p.h / 2) * s + ty; if (cx > 40 && cx < vw - 40 && cy > 40 && cy < vh - 40) return; tx = vw / 2 - (p.x + p.w / 2) * s; ty = vh / 2 - (p.y + p.h / 2) * s; apply(true); }
+
+  // ---------- legend doubles as the kind filter
+  function buildLegend() {
+    var Lg = $('legend'); Lg.innerHTML = '';
+    var used = {}; Object.keys(M.nodes).forEach(function (id) { var k = M.nodes[id].kind; used[k] = (used[k] || 0) + 1; });
+    var multi = Object.keys(used).length > 1;
+    Object.keys(KINDS).forEach(function (k) { if (!used[k]) return;
+      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', hiddenKinds[k] ? 'false' : 'true'); b.title = multi ? 'Mostrar ou esconder' : '';
+      b.innerHTML = '<i class="sw" style="background:' + tok(KINDS[k].fill) + ';border-color:' + tok(KINDS[k].stroke) + (KINDS[k].dash ? ';border-style:dashed' : '') + '"></i><span>' + esc(KINDS[k].label) + '</span><em class="n">' + used[k] + '</em>';
+      if (multi) b.onclick = function () { hiddenKinds[k] = !hiddenKinds[k]; b.setAttribute('aria-pressed', hiddenKinds[k] ? 'false' : 'true'); if (selected && hiddenKinds[M.nodes[selected].kind]) select(null, true); render(true); };
+      else b.disabled = true;
+      Lg.appendChild(b); });
+    var ue = {}; M.edges.forEach(function (e) { ue[e.kind] = 1; });
+    Object.keys(EDGES).forEach(function (k) { if (!ue[k]) return; var b = document.createElement('button'); b.type = 'button'; b.disabled = true; b.style.cursor = 'default';
+      b.innerHTML = '<i class="sw line" style="border-top-color:' + tok(EDGES[k].color) + ';border-top-style:' + EDGES[k].style + '"></i><span>' + esc(EDGES[k].label) + '</span>'; Lg.appendChild(b); });
+    var us = {}; Object.keys(M.nodes).forEach(function (id) { us[M.nodes[id].status] = 1; });
+    Object.keys(STATUS).forEach(function (st) { if (!us[st] || st === 'verified') return; var b = document.createElement('button'); b.type = 'button'; b.disabled = true; b.style.cursor = 'default';
+      b.innerHTML = '<i class="sw plain" style="border-style:' + (st === 'inferred' ? 'dashed' : 'dotted') + '"></i><span>' + esc(STATUS[st]) + '</span>'; Lg.appendChild(b); });
+  }
+
+  // ---------- inspector. Content swaps with a short fade so the eye follows the change.
+  var detail = $('detail');
+  function setDetail(html, instant) {
+    if (instant || !ms('--d-fast')) { detail.innerHTML = html; return; }
+    detail.classList.add('swap');
+    setTimeout(function () { detail.innerHTML = html; detail.classList.remove('swap'); }, ms('--d-fast'));
+  }
+  function showSummary(instant) {
+    var v = current, ids = Object.keys(M.nodes);
+    var crit = ids.filter(function (id) { return M.nodes[id].kind === 'critical'; }).length;
+    var inf = ids.filter(function (id) { return M.nodes[id].status !== 'verified'; }).length;
+    var html = '<div class="summary"><div class="name">' + esc(v.title || G.title) + '</div>';
+    var summary = v.summary || (v === views[0] ? G.summary : '');
+    if (summary) html += '<p class="prose" style="margin-top:8px">' + esc(summary) + '</p>';
+    var parts = ['<b>' + ids.length + '</b> nós', '<b>' + M.edges.length + '</b> ligações'];
+    if (crit) parts.push('<b>' + crit + '</b> ' + (crit === 1 ? 'ponto crítico' : 'pontos críticos'));
+    if (inf) parts.push('<b>' + inf + '</b> ' + (G.basis === 'proposal' ? 'em aberto ou sugeridos' : 'não verificados'));
+    html += '<div class="stats">' + parts.join(' · ') + '</div>';
+    var gids = Object.keys(M.groups);
+    if (gids.length) { html += '<h2 style="margin-top:24px">Grupos</h2><ul class="rows">'; gids.forEach(function (gid) { var g = M.groups[gid]; var n = ids.filter(function (id) { return M.nodes[id].group === gid; }).length; html += '<li><button type="button" data-g="' + esc(gid) + '"><b>' + esc(g.name) + '</b><code>' + n + '</code><span class="chev">' + (g.view ? '›' : '') + '</span></button></li>'; }); html += '</ul>'; }
+    html += '<p class="empty" style="margin-top:20px">Clique em um nó para ver responsabilidade, arquivo, evidência e ligações.</p></div>';
+    setDetail(html, instant);
+    setTimeout(function () { detail.querySelectorAll('[data-g]').forEach(function (b) { b.onclick = function () { var g = M.groups[b.dataset.g]; if (g.view) loadView(g.view); else showGroup(g); }; }); }, instant ? 0 : ms('--d-fast') + 5);
+  }
+  function showGroup(g) {
+    var html = '<div class="name">' + esc(g.name) + '</div>'; if (g.sub) html += '<div class="sub2">' + esc(g.sub) + '</div>'; if (g.file) html += '<div class="file">' + esc(g.file) + '</div>';
+    var members = Object.keys(M.nodes).filter(function (id) { return M.nodes[id].group === g.id; });
+    html += '<h2 style="margin-top:24px">Contém</h2><ul class="rows">'; members.forEach(function (id) { html += '<li><button type="button" data-n="' + esc(id) + '"><b>' + esc(M.nodes[id].name) + '</b>' + (M.nodes[id].sub ? '<span class="d">' + esc(M.nodes[id].sub) + '</span>' : '') + '</button></li>'; }); html += '</ul>';
+    if (g.view) html += '<div class="row"><button type="button" class="btn primary" id="btnView">Abrir vista ›</button></div>';
+    setDetail(html); bind();
+  }
+  function show(n) {
+    var html = '<div class="name">' + esc(n.name) + '</div>';
+    if (n.sub) html += '<div class="sub2">' + esc(n.sub) + '</div>';
+    if (n.file) html += '<div class="file">' + esc(n.file) + '</div>';
+    html += '<div class="tags"><span class="tag ' + esc(n.status) + '">' + esc(STATUS[n.status]) + '</span><span class="tag">' + esc(KINDS[n.kind].label) + '</span></div>';
+    if (n.evidence) html += '<h2 style="margin-top:24px">Evidência</h2><p class="prose">' + esc(n.evidence) + '</p>';
+    if (n.notes && n.notes.length) { html += '<h2 style="margin-top:24px">Notas</h2><ul>'; n.notes.forEach(function (t) { html += '<li>' + esc(t) + '</li>'; }); html += '</ul>'; }
+    var li = function (e, other) { return '<li><button type="button" data-n="' + esc(other.id) + '"><i style="border-color:' + tok(EDGES[e.kind].color) + ';border-top-style:' + EDGES[e.kind].style + '"></i><span><b>' + esc(other.name) + '</b> <code>' + esc(e.label) + '</code>' + (e.detail ? '<span class="d">' + esc(e.detail) + '</span>' : '') + '</span><span class="chev">›</span></button></li>'; };
+    if (M.out[n.id].length) { html += '<h2 style="margin-top:24px">Sai para</h2><ul class="rows">'; M.out[n.id].forEach(function (e) { html += li(e, M.nodes[e.to]); }); html += '</ul>'; }
+    if (M.inc[n.id].length) { html += '<h2 style="margin-top:24px">Recebe de</h2><ul class="rows">'; M.inc[n.id].forEach(function (e) { html += li(e, M.nodes[e.from]); }); html += '</ul>'; }
+    html += '<div class="row"><button type="button" class="btn primary" id="btnFocus" aria-pressed="' + (focused === n.id) + '">' + (focused === n.id ? 'Mostrar tudo' : 'Isolar vizinhança') + '</button>';
+    if (n.view) html += '<button type="button" class="btn primary" id="btnView">Abrir vista ›</button>';
+    html += '</div>';
+    setDetail(html); bind(n);
+  }
+  function bind(n) {
+    setTimeout(function () {
+      detail.querySelectorAll('[data-n]').forEach(function (b) { b.onclick = function () { select(b.dataset.n); centerOn(b.dataset.n); }; });
+      var bf = $('btnFocus'); if (bf && n) bf.onclick = function () { focused = focused === n.id ? null : n.id; render(true).then(function () { show(n); }); };
+      var bv = $('btnView'); if (bv) bv.onclick = function () { var target = n && n.view ? n.view : (detail._g && detail._g.view); if (target) loadView(target); };
+    }, ms('--d-fast') + 5);
+  }
+  function select(id, instant) {
+    selected = id; world.querySelectorAll('.nd').forEach(function (g) { g.classList.toggle('sel', g.dataset.id === id); });
+    if (id) show(M.nodes[id]); else { if (focused) { focused = null; render(true); } showSummary(instant); }
+  }
+  var _showGroup = showGroup; showGroup = function (g) { detail._g = g; _showGroup(g); };
+
+  // ---------- controls and keyboard
+  document.querySelectorAll('[data-level]').forEach(function (b) { b.onclick = function () {
+    level = +b.dataset.level; document.querySelectorAll('[data-level]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); render(true);
+  }; });
+  $('btnFit').onclick = function () { fit(true); };
+  $('btnIn').onclick = function () { zoomBy(1.25, null, null, true); };
+  $('btnOut').onclick = function () { zoomBy(0.8, null, null, true); };
+  $('btnDir').onclick = function () { dir = dir === 'RIGHT' ? 'DOWN' : 'RIGHT'; render(true); };
+  $('q').addEventListener('input', applyDim);
+  document.addEventListener('keydown', function (ev) {
+    var inInput = document.activeElement && document.activeElement.tagName === 'INPUT';
+    if (inInput) { if (ev.key === 'Escape') { $('q').value = ''; applyDim(); $('q').blur(); } return; }
+    if (ev.key === 'f') fit(true);
+    else if (ev.key === 'd') $('btnDir').click();
+    else if (ev.key === '+' || ev.key === '=') zoomBy(1.25, null, null, true);
+    else if (ev.key === '-') zoomBy(0.8, null, null, true);
+    else if (ev.key === 'Escape') select(null);
+    else if (ev.key === '/') { ev.preventDefault(); $('q').focus(); }
+    else if (ev.key.indexOf('Arrow') === 0) { ev.preventDefault(); var st = 48; if (ev.key === 'ArrowLeft') tx += st; if (ev.key === 'ArrowRight') tx -= st; if (ev.key === 'ArrowUp') ty += st; if (ev.key === 'ArrowDown') ty -= st; apply(true); }
+  });
+  // hint: once, briefly, then never again on this browser
+  if (!store.get('vt-hint') && !matchMedia('(pointer: coarse)').matches) { var h = $('hint'); setTimeout(function () { h.classList.add('on'); }, 600); setTimeout(function () { h.classList.remove('on'); store.set('vt-hint', '1'); }, 5600); }
+
+  setFonts(); applyTheme(theme);
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { setFonts(); loadView(views[0].id); });
+})();
+</script>

@@ -72,12 +72,13 @@ act-deb:
 
 # Lint flatpak manifest via flathub container
 lint-manifest:
-    mkdir -p /tmp/opencode/lintwork && cp io.github.eucaue.flexa.json /tmp/opencode/lintwork/
-    podman run --rm -v "/tmp/opencode/lintwork:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged manifest io.github.eucaue.flexa.json; podman unshare chown -R 0:0 /tmp/opencode/lintwork
+    mkdir -p /tmp/opencode/lintwork && cp io.github.eucaue.flexa.json /tmp/opencode/lintwork/ && \
+    podman run --rm -v "/tmp/opencode/lintwork:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged manifest io.github.eucaue.flexa.json && \
+    podman unshare chown -R 0:0 /tmp/opencode/lintwork
 
 # Lint exported ostree repo via flathub container (run after build with --repo=repo)
 lint-repo:
-    podman run --rm -v "{{justfile_directory()}}/repo:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged repo /work; podman unshare chown -R 0:0 "{{justfile_directory()}}/repo"
+    podman run --rm -v "{{justfile_directory()}}/repo:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged repo /work && podman unshare chown -R 0:0 "{{justfile_directory()}}/repo"
 
 # Clean build caches and directories
 clean:

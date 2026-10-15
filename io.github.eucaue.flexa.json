@@ -122,16 +122,16 @@
     {
       "name": "flexa",
       "buildsystem": "meson",
+      "builddir": true,
+      "config-opts": [
+        "--libdir=lib"
+      ],
       "sources": [
         {
           "type": "dir",
           "path": "."
         }
-      ],
-      "config-opts": [
-        "--libdir=lib"
-      ],
-      "builddir": true
+      ]
     }
   ]
 }

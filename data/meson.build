@@ -34,6 +34,11 @@ test('Validate schema file',
      args: ['--strict', '--dry-run', meson.current_source_dir()])
 
 
+install_data('../COPYING',
+  install_dir: get_option('datadir') / 'licenses' / 'io.github.eucaue.flexa' / 'flexa',
+  rename: 'COPYING',
+)
+
 service_conf = configuration_data()
 service_conf.set('bindir', get_option('prefix') / get_option('bindir'))
 configure_file(
