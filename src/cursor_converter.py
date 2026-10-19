@@ -2,13 +2,17 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import base64
+import json
 import os
 import platform
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
+import zlib
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
@@ -51,14 +55,31 @@ OnAllDoneCallback = Callable[[list[ConversionResult]], None]
 
 
 _INF_KEY_TO_LINUX: dict[str, list[str]] = {
-    "pointer": ["arrow", "default", "left_ptr", "top_left_arrow"],
+    "pointer": ["arrow", "default", "left_ptr", "top_left_arrow", "alias", "copy", "dnd-ask"],
     "help": ["help", "left_ptr_help", "question_arrow", "whats_this"],
     "work": ["left_ptr_watch", "progress", "pirate"],
     "busy": ["wait", "watch", "half-busy"],
-    "cross": ["cross", "crosshair"],
-    "text": ["ibeam", "text", "xterm"],
+    "cross": [
+        "cross",
+        "crosshair",
+        "cross_reverse",
+        "diamond_cross",
+        "tcross",
+        "zoom-in",
+        "zoom-out",
+    ],
+    "text": ["ibeam", "text", "xterm", "vertical-text"],
     "hand": ["draft", "pencil"],
-    "unavailable": ["circle", "crossed_circle", "forbidden", "no_drop", "not_allowed"],
+    "unavailable": [
+        "circle",
+        "crossed_circle",
+        "forbidden",
+        "no_drop",
+        "not_allowed",
+        "no-drop",
+        "not-allowed",
+        "X_cursor",
+    ],
     "vert": [
         "ns-resize",
         "n-resize",
@@ -66,6 +87,9 @@ _INF_KEY_TO_LINUX: dict[str, list[str]] = {
         "v_double_arrow",
         "size_ver",
         "row-resize",
+        "top_side",
+        "bottom_side",
+        "sb_v_double_arrow",
     ],
     "horz": [
         "ew-resize",
@@ -74,14 +98,34 @@ _INF_KEY_TO_LINUX: dict[str, list[str]] = {
         "h_double_arrow",
         "size_hor",
         "col-resize",
+        "left_side",
+        "right_side",
+        "sb_h_double_arrow",
     ],
-    "dgn1": ["nwse-resize", "nw-resize", "se-resize", "size_fdiag"],
-    "dgn2": ["nesw-resize", "ne-resize", "sw-resize", "size_bdiag"],
+    "dgn1": [
+        "nwse-resize",
+        "nw-resize",
+        "se-resize",
+        "size_fdiag",
+        "fd_double_arrow",
+        "top_left_corner",
+        "bottom_right_corner",
+    ],
+    "dgn2": [
+        "nesw-resize",
+        "ne-resize",
+        "sw-resize",
+        "size_bdiag",
+        "bd_double_arrow",
+        "top_right_corner",
+        "bottom_left_corner",
+    ],
     "move": [
         "fleur",
         "move",
         "size_all",
         "all-scroll",
+        "all-resize",
         "grabbing",
         "closedhand",
         "dnd-move",
@@ -143,6 +187,65 @@ _INF_KEY_ALIASES: dict[str, str] = {
     "wait": "busy",
     "working": "work",
 }
+
+_XCURSOR_IMAGE_TYPE = 0xFFFD0002
+
+# Windows cursors are drawn on a 32 px canvas for its default size, while Linux
+# desktops default to 24 px. Mapping 32 -> 24 keeps scalable cursors at their
+# original pixel size under the default cursor size.
+_SCALABLE_NOMINAL_RATIO = 3 / 4
+
+
+@dataclass
+class _XcursorFrame:
+    size: int
+    width: int
+    height: int
+    xhot: int
+    yhot: int
+    delay: int
+    pixels: bytes  # premultiplied BGRA
+
+
+def _read_xcursor_frames(path: Path) -> list[_XcursorFrame]:
+    data = path.read_bytes()
+    if data[:4] != b"Xcur":
+        raise ValueError(f"{path.name} is not an Xcursor file")
+    header_size, _version, ntoc = struct.unpack_from("<III", data, 4)
+    frames: list[_XcursorFrame] = []
+    for i in range(ntoc):
+        chunk_type, _subtype, pos = struct.unpack_from("<III", data, header_size + i * 12)
+        if chunk_type != _XCURSOR_IMAGE_TYPE:
+            continue
+        _hsize, _type, size, _ver, width, height, xhot, yhot, delay = struct.unpack_from(
+            "<9I", data, pos
+        )
+        pixels = data[pos + 36 : pos + 36 + width * height * 4]
+        frames.append(_XcursorFrame(size, width, height, xhot, yhot, delay, pixels))
+    return frames
+
+
+def _frame_to_png(frame: _XcursorFrame) -> bytes:
+    rows = bytearray()
+    for y in range(frame.height):
+        rows.append(0)  # PNG filter type: none
+        for x in range(frame.width):
+            offset = (y * frame.width + x) * 4
+            b, g, r, a = frame.pixels[offset : offset + 4]
+            if 0 < a < 255:  # undo Xcursor's premultiplied alpha
+                r, g, b = (min(255, c * 255 // a) for c in (r, g, b))
+            rows += bytes((r, g, b, a))
+
+    def chunk(tag: bytes, body: bytes) -> bytes:
+        return struct.pack(">I", len(body)) + tag + body + struct.pack(">I", zlib.crc32(tag + body))
+
+    ihdr = struct.pack(">IIBBBBB", frame.width, frame.height, 8, 6, 0, 0, 0)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(bytes(rows), 9))
+        + chunk(b"IEND", b"")
+    )
 
 
 @dataclass
@@ -416,6 +519,7 @@ class CursorConverter(BaseCursorConverter):
             self._run_win2xcur_sync(folder, cursors_dir, mapping, cancellable)
             if self.fallback_path:
                 self._copy_missing_linux_cursors(self.fallback_path, cursors_dir)
+            self._write_scalable_cursors(cursors_dir, out_theme / "cursors_scalable")
             self._write_index_theme(out_theme, theme_name)
 
             result = ConversionResult(
@@ -571,6 +675,58 @@ class CursorConverter(BaseCursorConverter):
             stem = f.stem.lower()
             mapping[f.name] = _FILENAME_TO_LINUX.get(stem, [stem])
         return mapping
+
+    def _write_scalable_cursors(self, cursors_dir: Path, scalable_dir: Path) -> None:
+        """
+        GNOME Shell 51+ draws the pointer from cursors_scalable/ (SVG + metadata.json,
+        the format KDE also uses) and falls back to Adwaita when it is missing.
+        Each Xcursor frame is wrapped as an embedded PNG inside an SVG.
+        """
+        scalable_dir.mkdir(parents=True, exist_ok=True)
+
+        for source in sorted(cursors_dir.iterdir()):
+            target = scalable_dir / source.name
+            if source.is_symlink():
+                if not target.exists() and not target.is_symlink():
+                    target.symlink_to(os.readlink(source))
+                continue
+            if not source.is_file():
+                continue
+
+            try:
+                frames = _read_xcursor_frames(source)
+            except (ValueError, struct.error) as err:
+                debug(f"Skipping scalable cursor for {source.name}: {err}")
+                continue
+            if not frames:
+                continue
+
+            target.mkdir(exist_ok=True)
+            metadata: list[dict[str, int | str]] = []
+            for i, frame in enumerate(frames):
+                filename = f"{source.name}-{i:02d}.svg"
+                png = base64.b64encode(_frame_to_png(frame)).decode("ascii")
+                (target / filename).write_text(
+                    '<svg xmlns="http://www.w3.org/2000/svg" '
+                    'xmlns:xlink="http://www.w3.org/1999/xlink" '
+                    f'width="{frame.width}" height="{frame.height}" '
+                    f'viewBox="0 0 {frame.width} {frame.height}">'
+                    f'<image width="{frame.width}" height="{frame.height}" '
+                    'style="image-rendering:pixelated" '
+                    f'xlink:href="data:image/png;base64,{png}"/></svg>\n',
+                    encoding="utf-8",
+                )
+                entry: dict[str, int | str] = {
+                    "filename": filename,
+                    "hotspot_x": frame.xhot,
+                    "hotspot_y": frame.yhot,
+                    "nominal_size": max(1, round(frame.size * _SCALABLE_NOMINAL_RATIO)),
+                }
+                if len(frames) > 1:
+                    entry["delay"] = frame.delay
+                metadata.append(entry)
+
+            (target / "metadata.json").write_text(json.dumps(metadata, indent=1), encoding="utf-8")
 
     def _write_index_theme(self, out_theme: Path, name: str) -> None:
         (out_theme / "index.theme").write_text(
