@@ -26,7 +26,49 @@ SANDBOX_PATH_REPLACEMENTS: tuple[tuple[str, str], ...] = (
     ("/usr/share/icons", "/run/host/share/icons"),
     ("/usr/share/icons", "/run/host/usr/share/icons"),
     ("/usr/local/share/icons", "/run/host/usr/local/share/icons"),
+    (str(Path.home() / ".local/share/icons"), "/run/host/user-share/icons"),
 )
+
+_DOCUMENT_PORTAL_ROOT = Path(f"/run/user/{os.getuid()}/doc") if hasattr(os, "getuid") else None
+
+
+def host_path(path: str) -> str:
+    """Map a Flatpak sandbox path to the path the user sees on the host.
+
+    Folders granted through the file chooser or drag and drop live under the
+    document portal (/run/user/UID/doc/ID/NAME); the portal stores the real
+    location in an xattr on the NAME entry.
+    """
+    value = Path(path)
+    if _DOCUMENT_PORTAL_ROOT is not None and value.is_relative_to(_DOCUMENT_PORTAL_ROOT):
+        parts = value.relative_to(_DOCUMENT_PORTAL_ROOT).parts
+        if len(parts) >= 2:
+            entry = _DOCUMENT_PORTAL_ROOT / parts[0] / parts[1]
+            try:
+                real = os.getxattr(entry, "user.document-portal.host-path")
+                return str(Path(os.fsdecode(real.rstrip(b"\0"))).joinpath(*parts[2:]))
+            except OSError:
+                return path
+
+    for system_path, sandbox_path in SANDBOX_PATH_REPLACEMENTS:
+        if path == sandbox_path or path.startswith(sandbox_path + os.sep):
+            return system_path + path[len(sandbox_path) :]
+    return path
+
+
+def stored_path(path: str) -> str:
+    """Prefer the host path when the sandbox can also reach it directly."""
+    mapped = host_path(path)
+    if _DOCUMENT_PORTAL_ROOT is not None and Path(path).is_relative_to(_DOCUMENT_PORTAL_ROOT):
+        return mapped if Path(mapped).exists() else path
+    return mapped
+
+
+def short_home(path: str) -> str:
+    home = GLib.get_home_dir()
+    if path == home or path.startswith(home + os.sep):
+        return "~" + path[len(home) :]
+    return path
 
 
 class ConversionStatus(Enum):

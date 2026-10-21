@@ -12,15 +12,15 @@
         <property name="icon-name">preferences-system-symbolic</property>
         <child>
           <object class="AdwPreferencesGroup">
-            <property name="title" translatable="yes">Output</property>
-            <property name="description" translatable="yes">Configure the conversion output directories</property>
+            <property name="title" translatable="yes">Output Folders</property>
+            <property name="description" translatable="yes">Where converted themes are saved</property>
             <child>
               <object class="AdwEntryRow" id="output_dir_row">
-                <property name="title" translatable="yes">To Linux Directory</property>
+                <property name="title" translatable="yes">Linux Themes</property>
                 <child type="suffix">
                   <object class="GtkButton" id="btn_browse_output">
                     <property name="icon-name">folder-open-symbolic</property>
-                    <property name="tooltip-text" translatable="yes">Browse…</property>
+                    <property name="tooltip-text" translatable="yes">Choose Folder</property>
                     <property name="valign">center</property>
                     <property name="cursor">
                       <object class="GdkCursor">
@@ -36,11 +36,11 @@
             </child>
             <child>
               <object class="AdwEntryRow" id="output_dir_windows_row">
-                <property name="title" translatable="yes">To Windows Directory</property>
+                <property name="title" translatable="yes">Windows Cursors</property>
                 <child type="suffix">
                   <object class="GtkButton" id="btn_browse_output_windows">
                     <property name="icon-name">folder-open-symbolic</property>
-                    <property name="tooltip-text" translatable="yes">Browse…</property>
+                    <property name="tooltip-text" translatable="yes">Choose Folder</property>
                     <property name="valign">center</property>
                     <property name="cursor">
                       <object class="GdkCursor">
@@ -58,11 +58,11 @@
         </child>
         <child>
           <object class="AdwPreferencesGroup">
-            <property name="title" translatable="yes">Fallback</property>
-            <property name="description" translatable="yes">Fill missing cursors from another folder.</property>
+            <property name="title" translatable="yes">Missing Cursors</property>
+            <property name="description" translatable="yes">Fill cursors a theme doesn't include</property>
             <child>
               <object class="AdwComboRow" id="fallback_linux_row">
-                <property name="title" translatable="yes">To Linux</property>
+                <property name="title" translatable="yes">Linux Themes</property>
                 <child type="suffix">
                   <object class="GtkButton" id="btn_browse_fallback_linux">
                     <property name="icon-name">folder-open-symbolic</property>
@@ -82,7 +82,7 @@
             </child>
             <child>
               <object class="AdwComboRow" id="fallback_windows_row">
-                <property name="title" translatable="yes">To Windows</property>
+                <property name="title" translatable="yes">Windows Cursors</property>
                 <child type="suffix">
                   <object class="GtkButton" id="btn_browse_fallback_windows">
                     <property name="icon-name">folder-open-symbolic</property>

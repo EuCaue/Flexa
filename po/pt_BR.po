@@ -258,41 +258,43 @@ msgstr "Preferências"
 msgid "General"
 msgstr "Geral"
 
-#: src/preferences-dialog.ui:13
-msgid "Output"
-msgstr "Saída"
+#: src/preferences-dialog.ui
+msgid "Output Folders"
+msgstr "Pastas de saída"
 
-#: src/preferences-dialog.ui:14
-#, fuzzy
-msgid "Configure the conversion output directories"
-msgstr "Configurar a saída da conversão"
+#: src/preferences-dialog.ui
+msgid "Where converted themes are saved"
+msgstr "Onde os temas convertidos são salvos"
 
-#: src/preferences-dialog.ui:17
-#, fuzzy
-msgid "To Linux Directory"
-msgstr "Diretório de Saída"
+#: src/preferences-dialog.ui
+msgid "Linux Themes"
+msgstr "Temas Linux"
 
-#: src/preferences-dialog.ui:21 src/preferences-dialog.ui:41
-msgid "Browse…"
-msgstr "Procurar…"
+#: src/preferences-dialog.ui
+msgid "Windows Cursors"
+msgstr "Cursores Windows"
 
-#: src/preferences-dialog.ui:37
-msgid "To Windows Directory"
-msgstr ""
+#: src/preferences-dialog.ui
+msgid "Choose Folder"
+msgstr "Escolher pasta"
 
-#: src/preferences-dialog.ui:59
-msgid "Fallback"
-msgstr "Fallback"
+#: src/preferences-dialog.ui
+msgid "Missing Cursors"
+msgstr "Cursores ausentes"
 
-#: src/preferences-dialog.ui:60
-msgid "Fill missing cursors from another folder."
-msgstr "Preenche cursores ausentes com outra pasta."
+#: src/preferences-dialog.ui
+msgid "Fill cursors a theme doesn't include"
+msgstr "Preenche os cursores que um tema não inclui"
 
-#: src/preferences-dialog.ui:63 src/window.ui:56
+#: src/preferences-dialog.ui
+msgid "Select a folder with cursor themes to fill this list"
+msgstr "Selecione uma pasta com temas de cursor para preencher esta lista"
+
+#: src/window.ui:56
 msgid "To Linux"
 msgstr "Para Linux"
 
-#: src/preferences-dialog.ui:68 src/window.ui:109
+#: src/window.ui:109
 msgid "To Windows"
 msgstr "Para Windows"
 
@@ -355,3 +357,19 @@ msgstr "_Sobre o Flexa"
 
 #~ msgid "Conversion completed"
 #~ msgstr "Conversão concluída"
+
+#: src/main.py
+msgid "Remove from list?"
+msgstr "Remover da lista?"
+
+#: src/main.py
+msgid "“{name}” will be removed from the list. Files on disk are not deleted."
+msgstr "“{name}” será removido da lista. Os arquivos no disco não são apagados."
+
+#: src/main.py
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: src/preferences.py
+msgid "Loading…"
+msgstr "Carregando…"

@@ -37,9 +37,11 @@ from .cursor_converter import (
     ConversionStatus,
     CursorConverter,
     ReverseCursorConverter,
+    host_path,
+    short_home,
 )
 from .debug import debug
-from .preferences import FlexaPreferencesDialog
+from .preferences import FallbackScan, FlexaPreferencesDialog
 from .window import FlexaWindow
 
 WINDOWS_CURSOR_EXTENSIONS = {".cur", ".ani"}
@@ -120,6 +122,7 @@ class FlexaApplication(Adw.Application):
         win = self.props.active_window
         if not isinstance(win, FlexaWindow):
             win = FlexaWindow(application=self)
+            FallbackScan.start(self.settings)
         self.window = win
         win.present()
         self.connect_signals()
@@ -382,10 +385,11 @@ class FlexaApplication(Adw.Application):
         dialog.present(self.window)
 
     def on_create_folder_row(self, row_name: str, row_folder_path: str):
+        location = short_home(host_path(row_folder_path))
         row = Adw.ActionRow(
             title=gtk_escape(row_name),
-            subtitle=gtk_escape(row_folder_path),
-            tooltip_text=row_folder_path,
+            subtitle=gtk_escape(location),
+            tooltip_text=location,
         )
         folder_icon = Gtk.Image(icon_name="folder-symbolic")
         remove_btn = Gtk.Button(
@@ -421,12 +425,32 @@ class FlexaApplication(Adw.Application):
             spinner=spinner,
         )
         mode = self.active_mode
-        remove_btn.connect("clicked", lambda _: self.on_remove_folder(row, row_data, mode))
+        remove_btn.connect("clicked", lambda _: self._confirm_remove_folder(row, row_data, mode))
         self.folder_rows[mode].append(row_data)
         row.add_prefix(folder_icon)
         row.add_suffix(status_stack)
         row.add_suffix(remove_btn)
         return row
+
+    def _confirm_remove_folder(self, row: Adw.ActionRow, row_data: RowData, mode: ConversionMode):
+        dialog = Adw.AlertDialog(
+            heading=_("Remove from list?"),
+            body=_("“{name}” will be removed from the list. Files on disk are not deleted.").format(
+                name=row_data.row_name
+            ),
+        )
+        dialog.add_response("cancel", _("Cancel"))
+        dialog.add_response("remove", _("Remove"))
+        dialog.set_response_appearance("remove", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response("cancel")
+        dialog.set_close_response("cancel")
+
+        def _on_response(_dialog: Adw.AlertDialog, response: str) -> None:
+            if response == "remove":
+                self.on_remove_folder(row, row_data, mode)
+
+        dialog.connect("response", _on_response)
+        dialog.present(self.window)
 
     def on_remove_folder(self, row: Adw.ActionRow, row_data: RowData, mode: ConversionMode):
         self._get_cursor_list(mode).remove(row)
@@ -688,7 +712,7 @@ class FlexaApplication(Adw.Application):
                     "Converted {done} of {total} cursor theme{plural}; {failed} failed"
                 ).format(done=done, failed=failed, total=total, plural=plural)
 
-            toast = Adw.Toast(title=title)
+            toast = Adw.Toast(title=title, timeout=0)
             toast.set_button_label(_("Open"))
             toast.connect("button-clicked", self.on_open_output_dir, mode)
             self.window.toast_overlay.add_toast(toast)
