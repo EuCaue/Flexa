@@ -1,0 +1,5 @@
+{
+  "io.github.eucaue.flexa": {
+    "finish-args-unnecessary-xdg-data-icons-create-access": "Converted cursor themes are written to ~/.local/share/icons so GNOME Settings and the compositor can find them"
+  }
+}

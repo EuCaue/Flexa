@@ -9,8 +9,8 @@
     "--socket=fallback-x11",
     "--device=dri",
     "--socket=wayland",
-    "--env=PYTHONPATH=/app/lib/python3.13/site-packages:/app/lib/python3.14/site-packages",
-    "--env=PATH=/app/bin:/usr/bin"
+    "--filesystem=xdg-data/icons:create",
+    "--filesystem=xdg-documents"
   ],
   "cleanup": [
     "/include",

@@ -72,13 +72,21 @@ act-deb:
 
 # Lint flatpak manifest via flathub container
 lint-manifest:
-    mkdir -p /tmp/opencode/lintwork && cp io.github.eucaue.flexa.json /tmp/opencode/lintwork/ && \
-    podman run --rm -v "/tmp/opencode/lintwork:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged manifest io.github.eucaue.flexa.json && \
-    podman unshare chown -R 0:0 /tmp/opencode/lintwork
+    mkdir -p /tmp/opencode/lintwork && cp io.github.eucaue.flexa.json /tmp/opencode/lintwork/
+    podman run --rm -v "/tmp/opencode/lintwork:/work:U" -v "{{justfile_directory()}}/packaging/flathub/exceptions.json:/exceptions.json:ro" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged --exceptions --user-exceptions /exceptions.json manifest io.github.eucaue.flexa.json; status=$?; podman unshare chown -R 0:0 /tmp/opencode/lintwork; exit $status
 
 # Lint exported ostree repo via flathub container (run after build with --repo=repo)
+# appstream-external-screenshot-url is expected locally: Flathub CI mirrors screenshots
 lint-repo:
-    podman run --rm -v "{{justfile_directory()}}/repo:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged repo /work && podman unshare chown -R 0:0 "{{justfile_directory()}}/repo"
+    podman run --rm -v "{{justfile_directory()}}/repo:/work:U" -v "{{justfile_directory()}}/packaging/flathub/exceptions.json:/exceptions.json:ro" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged --exceptions --user-exceptions /exceptions.json repo /work; status=$?; podman unshare chown -R 0:0 "{{justfile_directory()}}/repo"; exit $status
+
+# Generate the Flathub manifest from a pushed release tag (e.g. just flathub-manifest v1.2.2)
+flathub-manifest tag:
+    git ls-remote --exit-code --tags origin "refs/tags/{{tag}}" > /dev/null
+    mkdir -p dist/flathub
+    jq --arg tag "{{tag}}" --arg commit "$(git rev-list -n1 '{{tag}}')" \
+        '(.modules[] | select(.name == "flexa") | .sources) = [{"type": "git", "url": "https://github.com/eucaue/flexa.git", "tag": $tag, "commit": $commit}]' \
+        io.github.eucaue.flexa.json > dist/flathub/io.github.eucaue.flexa.json
 
 # Clean build caches and directories
 clean:
