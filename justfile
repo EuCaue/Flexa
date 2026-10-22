@@ -58,6 +58,10 @@ build-run-native-pt: install-native run-native-pt
 logs:
     journalctl --user -f -t io.github.eucaue.flexa
 
+# Test CI GitHub Action locally
+act-ci:
+    act -W .github/workflows/ci.yml -j check --bind
+
 # Test Flatpak GitHub Action locally
 act-flatpak:
     act -W .github/workflows/build-flatpak.yml -j flatpak --bind
@@ -71,9 +75,9 @@ act-deb:
     act -W .github/workflows/build-deb.yml -j deb --bind
 
 # Lint flatpak manifest via flathub container
-lint-manifest:
-    mkdir -p /tmp/opencode/lintwork && cp io.github.eucaue.flexa.json /tmp/opencode/lintwork/
-    podman run --rm -v "/tmp/opencode/lintwork:/work:U" -v "{{justfile_directory()}}/packaging/flathub/exceptions.json:/exceptions.json:ro" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged --exceptions --user-exceptions /exceptions.json manifest io.github.eucaue.flexa.json; status=$?; podman unshare chown -R 0:0 /tmp/opencode/lintwork; exit $status
+lint-manifest manifest="io.github.eucaue.flexa.json":
+    mkdir -p /tmp/flexa-lintwork && cp "{{manifest}}" /tmp/flexa-lintwork/io.github.eucaue.flexa.json
+    podman run --rm -v "/tmp/flexa-lintwork:/work:U,z" -v "{{justfile_directory()}}/packaging/flathub/exceptions.json:/exceptions.json:ro,z" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged --exceptions --user-exceptions /exceptions.json manifest io.github.eucaue.flexa.json; status=$?; podman unshare chown -R 0:0 /tmp/flexa-lintwork; exit $status
 
 # Lint exported ostree repo via flathub container (run after build with --repo=repo)
 # appstream-external-screenshot-url is expected locally: Flathub CI mirrors screenshots
@@ -91,6 +95,10 @@ flathub-manifest tag:
 # Clean build caches and directories
 clean:
     rm -rf _build build .flatpak-builder _native dist
+
+# Run unit tests
+test:
+    uv run --locked pytest -v
 
 # Run code linters (ruff and pyright)
 lint:

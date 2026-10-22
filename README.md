@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/GTK-4.10+-blue" alt="GTK" />
 </a>
 <a href="#">
-  <img src="https://img.shields.io/badge/version-1.2.0-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.2.1-blue" alt="Version" />
 </a>
 <a href="#">
   <img src="https://img.shields.io/badge/python-3.11+-blue" alt="Python" />
@@ -109,7 +109,7 @@ sudo apt install ./python3-win2xcur_*.deb ./flexa_*.deb
 1. Install the GNOME SDK and Platform:
 
 ```sh
-flatpak install flathub org.gnome.Sdk//50 org.gnome.Platform//50
+flatpak install flathub org.gnome.Sdk//51 org.gnome.Platform//51
 ```
 
 2. Build and run:
@@ -184,7 +184,26 @@ Each theme is saved as its own subfolder (named after the source folder) inside 
 
 ## Contributing
 
-Open an issue or PR at [github.com/eucaue/flexa](https://github.com/eucaue/flexa/issues).
+Contributions are welcome!
+
+### Development setup
+
+Flexa uses [`uv`](https://docs.astral.sh/uv/) for Python dependency management and tooling:
+
+```sh
+# Sync virtual environment including dev dependencies
+uv sync --group dev
+
+# Run unit tests
+just test
+# or: uv run pytest -v
+
+# Run linters (Ruff and Pyright)
+just lint
+# or: uv run ruff check . && uv run pyright src
+```
+
+Open an issue or pull request at [github.com/eucaue/flexa](https://github.com/eucaue/flexa). Every pull request runs the CI check suite automatically.
 
 ## Acknowledgements
 

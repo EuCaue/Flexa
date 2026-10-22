@@ -1,0 +1,74 @@
+name: Bug Report
+description: Report an issue or unexpected behavior in Flexa
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue!
+  - type: input
+    id: version
+    attributes:
+      label: Flexa version
+      description: App version found in the About dialog (e.g. 1.2.1).
+      placeholder: "1.2.1"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS, distribution, and desktop session
+      description: What operating system and desktop session are you using? (e.g. Fedora 41 GNOME Wayland, Arch KDE X11, Windows 11).
+      placeholder: "Fedora 41 GNOME (Wayland)"
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Installation method
+      description: How did you install Flexa?
+      options:
+        - Flatpak (Flathub / local build)
+        - DEB package
+        - RPM package
+        - Windows installer
+        - Native from source (Meson)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: What steps did you take to trigger the issue?
+      placeholder: |
+        1. Open Flexa
+        2. Drag and drop cursor folder '...'
+        3. Click Convert
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Diagnostic logs or conversion-error.txt (optional)
+      description: |
+        You can attach logs or the contents of conversion-error.txt.
+        To run Flexa with debug output: FLEXA_DEBUG=1 flexa (or flatpak run --env=FLEXA_DEBUG=1 io.github.eucaue.flexa).
+        Warning: conversion-error.txt includes your environment PATH and folder paths, which may contain private information or usernames. Please redact any private paths before submitting.
+    validations:
+      required: false

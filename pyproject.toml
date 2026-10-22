@@ -14,6 +14,7 @@ dependencies = [
 dev = [
     "pygobject-stubs>=2.17.0",
     "pyright>=1.1.400",
+    "pytest>=8.0.0",
     "ruff>=0.15.0",
 ]
 
@@ -37,3 +38,8 @@ pythonPlatform = "Linux"
 pythonVersion = "3.11"
 venvPath = "."
 venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = [".*", "_*", "build", "dist", "repo", "obj-*"]
+

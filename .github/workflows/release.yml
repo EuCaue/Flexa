@@ -12,6 +12,10 @@ on:
         default: "v1.0.0"
 
 jobs:
+  ci:
+    name: Checks & Tests
+    uses: ./.github/workflows/ci.yml
+
   flatpak:
     uses: ./.github/workflows/build-flatpak.yml
 
@@ -26,12 +30,46 @@ jobs:
 
   release:
     name: Create Release
-    needs: [flatpak, rpm, deb, windows]
+    needs: [ci, flatpak, rpm, deb, windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag_name || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Validate release tag
+        run: |
+          RELEASE_TAG="${{ github.event.inputs.tag_name || github.ref_name }}"
+          git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null || {
+            echo "Error: Tag '$RELEASE_TAG' does not exist in repository." >&2
+            exit 1
+          }
+
+      - name: Set up just
+        uses: extractions/setup-just@v2
+
+      - name: Generate and lint Flathub manifest
+        run: |
+          RELEASE_TAG="${{ github.event.inputs.tag_name || github.ref_name }}"
+          just flathub-manifest "$RELEASE_TAG"
+          EXPECTED_COMMIT="$(git rev-list -n1 "$RELEASE_TAG")"
+          ACTUAL_TAG="$(jq -r '.modules[] | select(.name == "flexa") | .sources[0].tag' dist/flathub/io.github.eucaue.flexa.json)"
+          ACTUAL_COMMIT="$(jq -r '.modules[] | select(.name == "flexa") | .sources[0].commit' dist/flathub/io.github.eucaue.flexa.json)"
+          if [ "$ACTUAL_TAG" != "$RELEASE_TAG" ]; then
+            echo "Manifest tag mismatch: expected $RELEASE_TAG, got $ACTUAL_TAG" >&2
+            exit 1
+          fi
+          if [ "$ACTUAL_COMMIT" != "$EXPECTED_COMMIT" ]; then
+            echo "Manifest commit mismatch: expected $EXPECTED_COMMIT, got $ACTUAL_COMMIT" >&2
+            exit 1
+          fi
+          just lint-manifest dist/flathub/io.github.eucaue.flexa.json
+
       - name: Download Flatpak artifact
         uses: actions/download-artifact@v4
         with:
@@ -66,12 +104,12 @@ jobs:
           sudo apt install ./python3-win2xcur_*.deb ./flexa_*.deb
           ```
           **Windows** - Download `Flexa-Windows-Installer.exe` and run the installer.
-          **Flathub** - Coming soon.
+          **Flathub** - Manifest attached for Flathub submission.
           ### SHA256 Checksums
           | File | SHA256 Checksum |
           |------|-----------------|
           EOF
-          for f in flexa.flatpak Flexa-Windows-Installer.exe $(find . -name "*.rpm") $(find . -name "*.deb"); do
+          for f in flexa.flatpak Flexa-Windows-Installer.exe dist/flathub/io.github.eucaue.flexa.json $(find . -name "*.rpm") $(find . -name "*.deb"); do
             if [ -f "$f" ]; then
               sha=$(sha256sum "$f" | cut -d' ' -f1)
               echo "| \`$(basename $f)\` | \`$sha\` |" >> release_body.md
@@ -89,5 +127,6 @@ jobs:
           files: |
             flexa.flatpak
             Flexa-Windows-Installer.exe
+            dist/flathub/io.github.eucaue.flexa.json
             **/*.rpm
             **/*.deb

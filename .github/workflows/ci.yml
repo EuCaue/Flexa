@@ -1,0 +1,75 @@
+name: CI
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  check:
+    name: Checks & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            meson \
+            ninja-build \
+            gettext \
+            desktop-file-utils \
+            appstream \
+            python3-dev \
+            libgtk-4-dev \
+            libadwaita-1-dev \
+            libgirepository1.0-dev \
+            libglib2.0-dev \
+            python3-gi \
+            python3-gi-cairo \
+            python3-cairo \
+            curl
+
+      - name: Set up Python 3.11
+        if: ${{ !env.ACT }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        if: ${{ !env.ACT }}
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up uv (local act runner)
+        if: ${{ env.ACT }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Python dependencies
+        run: uv sync --locked --group dev
+
+      - name: Python quality checks
+        run: |
+          uv run --locked ruff check .
+          uv run --locked pyright src
+          uv run --locked pytest -q
+
+      - name: Meson build and validate
+        run: |
+          meson setup build
+          meson compile -C build
+          meson test -C build --print-errorlogs
