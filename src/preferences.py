@@ -166,14 +166,12 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
         if handler_id is not None and GObject.signal_handler_is_connected(row, handler_id):
             row.disconnect(handler_id)
 
-        setattr(row, "_fallback_values", values)
+        setattr(row, "_fallback_locations", dict(zip(labels, values)))
         row.set_model(Gtk.StringList.new(labels))
         row.set_selected(selected_index)
         row.set_tooltip_text(self._fallback_location(values[selected_index]))
 
-        new_handler_id = row.connect(
-            "notify::selected", self._on_fallback_selected, key, values
-        )
+        new_handler_id = row.connect("notify::selected", self._on_fallback_selected, key, values)
         setattr(row, "_fallback_handler_id", new_handler_id)
 
     @staticmethod
@@ -203,9 +201,8 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
             subtitle = cast(Gtk.Label, title.get_next_sibling())
             string = cast(Gtk.StringObject, item.get_item())
             title.set_label(string.get_string())
-            values: list[str | None] = getattr(row, "_fallback_values", [])
-            position = item.get_position()
-            location = self._fallback_location(values[position]) if position < len(values) else None
+            locations: dict[str, str | None] = getattr(row, "_fallback_locations", {})
+            location = self._fallback_location(locations.get(string.get_string()))
             subtitle.set_label(location or "")
             subtitle.set_visible(location is not None)
 
@@ -302,9 +299,7 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
     def __init__(self, settings: Gio.Settings, **kwargs) -> None:
         super().__init__(**kwargs)
         self.settings = settings
-        self.settings.bind(
-            "output-dir", self.output_dir_row, "text", Gio.SettingsBindFlags.DEFAULT
-        )
+        self.settings.bind("output-dir", self.output_dir_row, "text", Gio.SettingsBindFlags.DEFAULT)
         if self.settings.get_string("output-dir") == "":
             if os.name == "nt":
                 self.output_dir_row.set_text("~\\Documents\\Linux Cursors")
@@ -341,6 +336,13 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
 
         self._setup_fallback_list_factory(self.fallback_linux_row)
         self._setup_fallback_list_factory(self.fallback_windows_row)
+
+        for row in (self.fallback_linux_row, self.fallback_windows_row):
+            search_entry = cast(
+                Gtk.SearchEntry,
+                Gtk.Widget.get_template_child(row, Adw.ComboRow, "search_entry"),
+            )
+            search_entry.connect("stop-search", lambda entry: entry.set_text(""))
 
         for row in (self.fallback_linux_row, self.fallback_windows_row):
             row.set_model(Gtk.StringList.new([_("Loading…")]))
