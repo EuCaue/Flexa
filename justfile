@@ -60,7 +60,7 @@ logs:
 
 # Test CI GitHub Action locally
 act-ci:
-    act -W .github/workflows/ci.yml -j check --bind
+    act -W .github/workflows/ci.yml --bind
 
 # Test Flatpak GitHub Action locally
 act-flatpak:

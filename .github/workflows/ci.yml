@@ -14,14 +14,16 @@ on:
   workflow_call:
 
 jobs:
-  check:
-    name: Checks & Tests
+  python-checks:
+    name: Python checks & tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - &checkout
+        name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install native dependencies
+      - &native-deps
+        name: Install native dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -34,6 +36,7 @@ jobs:
             appstream \
             python3-dev \
             libcairo2-dev \
+            gobject-introspection \
             libgtk-4-dev \
             libadwaita-1-dev \
             libgirepository-2.0-dev \
@@ -71,6 +74,12 @@ jobs:
           uv run --locked pyright src
           uv run --locked pytest -q
 
+  meson-build:
+    name: Meson build & validate
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+      - *native-deps
       - name: Meson build and validate
         run: |
           rm -rf build/ci
