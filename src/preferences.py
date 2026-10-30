@@ -11,7 +11,13 @@ from typing import Callable, cast
 
 from gi.repository import Adw, Gio, GLib, GObject, Gtk, Pango
 
-from .cursor_converter import BaseCursorConverter, host_path, short_home, stored_path
+from .cursor_converter import (
+    BaseCursorConverter,
+    documents_dir,
+    host_path,
+    short_home,
+    stored_path,
+)
 from .debug import debug
 
 
@@ -103,7 +109,7 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
             Path(os.environ["APPDATA"]) / "Microsoft/Windows/Cursors"
             if os.environ.get("APPDATA")
             else None,
-            Path("~/Documents/Windows Cursors").expanduser(),
+            documents_dir() / "Windows Cursors",
         ]
         custom = settings.get_string("fallback-root-windows")
         if custom:
@@ -316,7 +322,9 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
             if os.name == "nt":
                 self.output_dir_windows_row.set_text("~\\Documents\\Windows Cursors")
             else:
-                self.output_dir_windows_row.set_text("~/Documents/Windows Cursors")
+                self.output_dir_windows_row.set_text(
+                    short_home(str(documents_dir() / "Windows Cursors"))
+                )
 
         self.btn_browse_output.connect(
             "clicked", lambda _: self._select_output_folder(self.output_dir_row)

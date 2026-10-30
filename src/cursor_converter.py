@@ -75,6 +75,18 @@ def short_home(path: str) -> str:
     return path
 
 
+def documents_dir() -> Path:
+    """Return the user's documents directory as named by XDG.
+
+    The folder is localized (e.g. ~/Documentos), so it cannot be hardcoded;
+    Flatpak's --filesystem=xdg-documents grant exposes this same path.
+    """
+    if os.name == "nt":
+        return Path.home() / "Documents"
+    special = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
+    return Path(special) if special else Path.home() / "Documents"
+
+
 class ConversionStatus(Enum):
     PENDING = auto()
     RUNNING = auto()

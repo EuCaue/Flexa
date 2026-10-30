@@ -18,6 +18,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import sys
+import tempfile
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import Enum
@@ -37,6 +38,7 @@ from .cursor_converter import (
     ConversionStatus,
     CursorConverter,
     ReverseCursorConverter,
+    documents_dir,
     host_path,
     short_home,
 )
@@ -56,12 +58,24 @@ def gtk_escape(text: str) -> str:
 
 _DEFAULT_OUTPUT_DIRS = {
     "output-dir": "~/.local/share/icons",
-    "output-dir-windows": "~/Documents/Windows Cursors",
 }
 
 
 def _default_output_dir(key: str) -> Path:
+    if key == "output-dir-windows":
+        return documents_dir() / "Windows Cursors"
     return Path(_DEFAULT_OUTPUT_DIRS.get(key, "~")).expanduser()
+
+
+def _validate_output_dir(path: Path) -> str | None:
+    """Create path if needed and check it is writable; return the error or None."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryFile(dir=path):
+            pass
+    except OSError as err:
+        return str(err)
+    return None
 
 
 class ConversionMode(Enum):
@@ -559,12 +573,16 @@ class FlexaApplication(Adw.Application):
                 self._show_invalid_fallback_dialog(fallback_path)
                 return
 
+        raw = self.settings.get_string(output_key)
+        output_dir = Path(raw).expanduser() if raw else _default_output_dir(output_key)
+        error = _validate_output_dir(output_dir)
+        if error:
+            self._show_output_dir_error_dialog(output_dir, error)
+            return
+
         btn.set_sensitive(False)
         self.window.btn_add.set_sensitive(False)
         btn.set_child(Gtk.Spinner(spinning=True))
-
-        raw = self.settings.get_string(output_key)
-        output_dir = Path(raw).expanduser() if raw else _default_output_dir(output_key)
 
         if mode == ConversionMode.TO_LINUX:
             converter: BaseCursorConverter = CursorConverter(
@@ -584,6 +602,16 @@ class FlexaApplication(Adw.Application):
         self.converters[mode] = converter
         converter.add_many([Path(f.folder_path) for f in self.folder_rows[mode]])
         converter.start()
+
+    def _show_output_dir_error_dialog(self, output_dir: Path, error: str):
+        dialog = Adw.AlertDialog(
+            heading=_("Output folder unavailable"),
+            body=_("Flexa cannot create or write to the output folder.")
+            + f"\n\n{output_dir}\n{error}",
+        )
+        dialog.add_response("close", _("Close"))
+        dialog.set_default_response("close")
+        dialog.present(self.window)
 
     def _show_invalid_fallback_dialog(self, fallback_path: Path):
         dialog = Adw.AlertDialog(
