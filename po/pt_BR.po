@@ -175,6 +175,26 @@ msgstr "Fallback indisponível"
 msgid "Selected folder is unavailable or has no compatible cursors."
 msgstr "A pasta selecionada não está disponível ou não tem cursores compatíveis."
 
+#: src/main.py:612
+msgid "No Documents folder"
+msgstr "Pasta Documentos não encontrada"
+
+#: src/main.py:614
+msgid ""
+"Flexa could not find your Documents folder. Choose an output folder in "
+"Preferences and try again."
+msgstr ""
+"O Flexa não encontrou sua pasta Documentos. Escolha uma pasta de saída nas "
+"Preferências e tente novamente."
+
+#: src/main.py:624
+msgid "Output folder unavailable"
+msgstr "Pasta de saída indisponível"
+
+#: src/main.py:625
+msgid "Flexa cannot create or write to the output folder:"
+msgstr "O Flexa não conseguiu criar ou gravar na pasta de saída:"
+
 #: src/main.py:497 src/main.py:512 src/main.py:530 src/main.py:551
 msgid "Close"
 msgstr "Fechar"
