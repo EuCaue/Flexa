@@ -94,6 +94,18 @@ def test_default_windows_output_uses_documents_dir(tmp_path):
     assert output == str(home / "Documentos" / "Windows Cursors")
 
 
+def test_default_windows_output_is_none_in_flatpak_without_xdg_dir(tmp_path):
+    home = _fake_home(tmp_path, None)
+    output = _run(
+        home,
+        "import flexa.cursor_converter as cc\n"
+        "cc._IN_FLATPAK = True\n"
+        "from flexa.main import _default_output_dir\n"
+        "print(_default_output_dir('output-dir-windows'))",
+    )
+    assert output == "None"
+
+
 def test_validate_output_dir_accepts_writable_dir(tmp_path):
     target = tmp_path / "ok"
     output = _run(
@@ -118,5 +130,17 @@ def test_validate_output_dir_reports_failure(tmp_path):
 
 
 def test_no_hardcoded_documents_literal():
-    offenders = [path.name for path in SRC_DIR.glob("*.py") if '"~/Documents' in path.read_text()]
+    # cursor_converter.py holds the documented native fallback.
+    patterns = (
+        '"~/Documents',
+        "'~/Documents",
+        'Path.home() / "Documents"',
+        "Path.home() / 'Documents'",
+    )
+    offenders = [
+        path.name
+        for path in SRC_DIR.glob("*.py")
+        if path.name != "cursor_converter.py"
+        and any(pattern in path.read_text() for pattern in patterns)
+    ]
     assert offenders == []
