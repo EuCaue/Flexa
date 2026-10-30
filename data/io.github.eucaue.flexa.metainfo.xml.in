@@ -5,7 +5,7 @@
   <project_license>GPL-3.0-or-later</project_license>
 
   <name>Flexa</name>
-  <summary>Convert cursor themes between Windows and Linux formats</summary>
+  <summary>Convert cursor themes</summary>
   <description>
     <p>
       Flexa is a GNOME application that converts cursor themes between
@@ -27,15 +27,13 @@
     </p>
   </description>
 
-  <developer id="github.eucaue">
+  <developer id="io.github.eucaue">
     <name>caue</name>
   </developer>
 
   <url type="homepage">https://github.com/eucaue/flexa</url>
   <url type="vcs-browser">https://github.com/eucaue/flexa</url>
   <url type="bugtracker">https://github.com/eucaue/flexa/issues</url>
-  <url type="translate">https://github.com/eucaue/flexa</url>
-  <url type="help">https://github.com/eucaue/flexa</url>
   <url type="contribute">https://github.com/eucaue/flexa</url>
 
   <translation type="gettext">flexa</translation>
@@ -67,7 +65,6 @@
     </release>
     <release version="1.2.1" date="2026-09-01">
       <description translate="no">
-        <p>Discover cursor themes inside selected parent folders</p>
         <ul>
           <li>Discover cursor themes inside selected parent folders</li>
           <li>Load fallback cursor themes asynchronously</li>
