@@ -101,6 +101,7 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
 
     @classmethod
     def find_windows_fallback_paths(cls, settings: Gio.Settings) -> list[str]:
+        documents = documents_dir()
         roots = [
             Path(os.environ["WINDIR"]) / "Cursors" if os.environ.get("WINDIR") else None,
             Path(os.environ["LOCALAPPDATA"]) / "Microsoft/Windows/Cursors"
@@ -109,7 +110,7 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
             Path(os.environ["APPDATA"]) / "Microsoft/Windows/Cursors"
             if os.environ.get("APPDATA")
             else None,
-            documents_dir() / "Windows Cursors",
+            documents / "Windows Cursors" if documents else None,
         ]
         custom = settings.get_string("fallback-root-windows")
         if custom:
@@ -322,8 +323,9 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
             if os.name == "nt":
                 self.output_dir_windows_row.set_text("~\\Documents\\Windows Cursors")
             else:
+                documents = documents_dir()
                 self.output_dir_windows_row.set_text(
-                    short_home(str(documents_dir() / "Windows Cursors"))
+                    short_home(str(documents / "Windows Cursors")) if documents else ""
                 )
 
         self.btn_browse_output.connect(

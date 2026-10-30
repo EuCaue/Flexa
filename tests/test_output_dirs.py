@@ -57,32 +57,52 @@ def _run(home: Path, code: str) -> str:
     return result.stdout.strip()
 
 
+def _documents_dir(home: Path, in_flatpak: bool) -> str:
+    # The module-level constant is computed at import; pin it for the test.
+    return _run(
+        home,
+        "import flexa.cursor_converter as cc\n"
+        f"cc._IN_FLATPAK = {in_flatpak}\n"
+        "print(cc.documents_dir())",
+    )
+
+
 def test_documents_dir_honors_xdg_documents_dir(tmp_path):
     home = _fake_home(tmp_path, "Documentos")
-    output = _run(
-        home,
-        "from flexa.cursor_converter import documents_dir\nprint(documents_dir())",
-    )
-    assert output == str(home / "Documentos")
+    assert _documents_dir(home, in_flatpak=True) == str(home / "Documentos")
 
 
-def test_documents_dir_falls_back_to_home(tmp_path):
+def test_documents_dir_falls_back_native_without_xdg_dir(tmp_path):
     home = _fake_home(tmp_path, None)
-    output = _run(
-        home,
-        "from flexa.cursor_converter import documents_dir\nprint(documents_dir())",
-    )
-    assert output == str(home / "Documents")
+    assert _documents_dir(home, in_flatpak=False) == str(home / "Documents")
+
+
+def test_documents_dir_none_in_flatpak_without_xdg_dir(tmp_path):
+    home = _fake_home(tmp_path, None)
+    assert _documents_dir(home, in_flatpak=True) == "None"
 
 
 def test_default_windows_output_uses_documents_dir(tmp_path):
     home = _fake_home(tmp_path, "Documentos")
     output = _run(
         home,
+        "import flexa.cursor_converter as cc\n"
+        "cc._IN_FLATPAK = True\n"
         "from flexa.main import _default_output_dir\n"
         "print(_default_output_dir('output-dir-windows'))",
     )
     assert output == str(home / "Documentos" / "Windows Cursors")
+
+
+def test_validate_output_dir_accepts_writable_dir(tmp_path):
+    target = tmp_path / "ok"
+    output = _run(
+        tmp_path,
+        "from pathlib import Path\n"
+        "from flexa.main import _validate_output_dir\n"
+        f"print(_validate_output_dir(Path({str(target)!r})) is None)",
+    )
+    assert output == "True"
 
 
 def test_validate_output_dir_reports_failure(tmp_path):
@@ -95,3 +115,8 @@ def test_validate_output_dir_reports_failure(tmp_path):
         f"print(_validate_output_dir(Path({str(blocked / 'sub')!r})) is not None)",
     )
     assert error == "True"
+
+
+def test_no_hardcoded_documents_literal():
+    offenders = [path.name for path in SRC_DIR.glob("*.py") if '"~/Documents' in path.read_text()]
+    assert offenders == []

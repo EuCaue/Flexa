@@ -61,9 +61,10 @@ _DEFAULT_OUTPUT_DIRS = {
 }
 
 
-def _default_output_dir(key: str) -> Path:
+def _default_output_dir(key: str) -> Path | None:
     if key == "output-dir-windows":
-        return documents_dir() / "Windows Cursors"
+        documents = documents_dir()
+        return documents / "Windows Cursors" if documents else None
     return Path(_DEFAULT_OUTPUT_DIRS.get(key, "~")).expanduser()
 
 
@@ -575,9 +576,12 @@ class FlexaApplication(Adw.Application):
 
         raw = self.settings.get_string(output_key)
         output_dir = Path(raw).expanduser() if raw else _default_output_dir(output_key)
+        if output_dir is None:
+            self._show_missing_documents_dialog()
+            return
         error = _validate_output_dir(output_dir)
         if error:
-            self._show_output_dir_error_dialog(output_dir, error)
+            self._show_output_dir_error_dialog(error)
             return
 
         btn.set_sensitive(False)
@@ -603,11 +607,22 @@ class FlexaApplication(Adw.Application):
         converter.add_many([Path(f.folder_path) for f in self.folder_rows[mode]])
         converter.start()
 
-    def _show_output_dir_error_dialog(self, output_dir: Path, error: str):
+    def _show_missing_documents_dialog(self):
+        dialog = Adw.AlertDialog(
+            heading=_("No Documents folder"),
+            body=_(
+                "Flexa could not find your Documents folder. "
+                "Choose an output folder in Preferences and try again."
+            ),
+        )
+        dialog.add_response("close", _("Close"))
+        dialog.set_default_response("close")
+        dialog.present(self.window)
+
+    def _show_output_dir_error_dialog(self, error: str):
         dialog = Adw.AlertDialog(
             heading=_("Output folder unavailable"),
-            body=_("Flexa cannot create or write to the output folder.")
-            + f"\n\n{output_dir}\n{error}",
+            body=_("Flexa cannot create or write to the output folder:") + f"\n\n{error}",
         )
         dialog.add_response("close", _("Close"))
         dialog.set_default_response("close")
@@ -749,6 +764,9 @@ class FlexaApplication(Adw.Application):
         output_key = "output-dir" if mode == ConversionMode.TO_LINUX else "output-dir-windows"
         raw = self.settings.get_string(output_key)
         output_path = Path(raw).expanduser() if raw else _default_output_dir(output_key)
+        if output_path is None:
+            debug("Cannot open output directory: no Documents folder configured")
+            return
         file = Gio.File.new_for_path(str(output_path))
         launcher = Gtk.FileLauncher.new(file)
         try:

@@ -34,6 +34,7 @@ SANDBOX_PATH_REPLACEMENTS: tuple[tuple[str, str], ...] = (
 )
 
 _DOCUMENT_PORTAL_ROOT = Path(f"/run/user/{os.getuid()}/doc") if hasattr(os, "getuid") else None
+_IN_FLATPAK = Path("/.flatpak-info").exists()
 
 
 def host_path(path: str) -> str:
@@ -75,16 +76,20 @@ def short_home(path: str) -> str:
     return path
 
 
-def documents_dir() -> Path:
-    """Return the user's documents directory as named by XDG.
+def documents_dir() -> Path | None:
+    """Return the user's documents directory, or None when there is no safe one.
 
     The folder is localized (e.g. ~/Documentos), so it cannot be hardcoded;
-    Flatpak's --filesystem=xdg-documents grant exposes this same path.
+    Flatpak's --filesystem=xdg-documents grant exposes this same path. Inside
+    Flatpak an unset documents dir means $HOME/Documents is a private tmpfs, so
+    the caller must ask the user instead of writing there.
     """
     if os.name == "nt":
         return Path.home() / "Documents"
     special = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
-    return Path(special) if special else Path.home() / "Documents"
+    if special:
+        return Path(special)
+    return None if _IN_FLATPAK else Path.home() / "Documents"
 
 
 class ConversionStatus(Enum):
