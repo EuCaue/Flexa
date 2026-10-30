@@ -18,17 +18,17 @@ jobs:
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           update: true
           install: >-
-            mingw-w64-x86_64-python
-            mingw-w64-x86_64-gtk4
-            mingw-w64-x86_64-python-gobject
-            mingw-w64-x86_64-libadwaita
-            mingw-w64-x86_64-python-pip
-            mingw-w64-x86_64-python-numpy
-            mingw-w64-x86_64-glib2
-            mingw-w64-x86_64-imagemagick
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-gtk4
+            mingw-w64-ucrt-x86_64-python-gobject
+            mingw-w64-ucrt-x86_64-libadwaita
+            mingw-w64-ucrt-x86_64-python-pip
+            mingw-w64-ucrt-x86_64-python-numpy
+            mingw-w64-ucrt-x86_64-glib2
+            mingw-w64-ucrt-x86_64-imagemagick
             zip
             p7zip
             jq
@@ -71,12 +71,12 @@ jobs:
           magick -background none data/icons/hicolor/scalable/apps/io.github.eucaue.flexa.svg -define icon:auto-resize=16,32,48,64,256 data/icons/flexa.ico
 
           mkdir -p package/share/icons
-          cp -r /mingw64/share/icons/Adwaita package/share/icons/
+          cp -r /ucrt64/share/icons/Adwaita package/share/icons/
 
-          cp data/io.github.eucaue.flexa.gschema.xml /mingw64/share/glib-2.0/schemas/
-          glib-compile-schemas /mingw64/share/glib-2.0/schemas/
+          cp data/io.github.eucaue.flexa.gschema.xml /ucrt64/share/glib-2.0/schemas/
+          glib-compile-schemas /ucrt64/share/glib-2.0/schemas/
 
-          TYPELIB_DIR=/mingw64/lib/girepository-1.0
+          TYPELIB_DIR=/ucrt64/lib/girepository-1.0
           mkdir -p package/gi_typelibs
           for tl in Gtk-4.0 Gdk-4.0 Gsk-4.0 GdkPixbuf-2.0 Pango-1.0 \
                     PangoCairo-1.0 Graphene-1.0 cairo-1.0 HarfBuzz-0.0; do

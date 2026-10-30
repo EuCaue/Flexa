@@ -45,6 +45,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{appid}.desktop
 
 %files -f %{name}.lang
 %license COPYING
+%{_datadir}/licenses/%{appid}/
 %doc README.md
 %{_bindir}/flexa
 %{_datadir}/%{name}/
