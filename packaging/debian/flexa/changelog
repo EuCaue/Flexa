@@ -1,3 +1,10 @@
+flexa (1.2.2-1) unstable; urgency=medium
+
+  * Add scalable cursors for GNOME Shell 51
+  * Skip truncated cursors and dangling aliases
+
+ -- caue <caue@fedora>  Fri, 30 Oct 2026 12:00:00 +0000
+
 flexa (1.2.1-1) unstable; urgency=medium
 
   * Fix folder names with special characters (&) in UI

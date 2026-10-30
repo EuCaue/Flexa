@@ -49,12 +49,22 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/eucaue/flexa/v1.2.1/flexa.png</image>
+      <image>https://raw.githubusercontent.com/eucaue/flexa/v1.2.2/flexa.png</image>
       <caption>Main window with cursor folders added</caption>
     </screenshot>
   </screenshots>
 
   <releases>
+    <release version="1.2.2" date="2026-10-30">
+      <description translate="no">
+        <p>Scalable cursors for GNOME Shell 51</p>
+        <ul>
+          <li>Generate cursors_scalable with metadata.json for GNOME Shell 51</li>
+          <li>Keep one image per scalable cursor using its real nominal size</li>
+          <li>Skip truncated cursors and dangling aliases</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.2.1" date="2026-09-01">
       <description translate="no">
         <p>Discover cursor themes inside selected parent folders</p>
