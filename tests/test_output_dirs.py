@@ -106,6 +106,30 @@ def test_default_windows_output_is_none_in_flatpak_without_xdg_dir(tmp_path):
     assert output == "None"
 
 
+def test_custom_output_dir_bypasses_documents_default(tmp_path):
+    home = _fake_home(tmp_path, None)
+    output = _run(
+        home,
+        "import flexa.cursor_converter as cc\n"
+        "cc._IN_FLATPAK = True\n"
+        "from flexa.main import resolve_output_dir\n"
+        "print(resolve_output_dir('/tmp/custom-cursors', 'output-dir-windows'))",
+    )
+    assert output == "/tmp/custom-cursors"
+
+
+def test_empty_output_dir_still_needs_documents_in_flatpak(tmp_path):
+    home = _fake_home(tmp_path, None)
+    output = _run(
+        home,
+        "import flexa.cursor_converter as cc\n"
+        "cc._IN_FLATPAK = True\n"
+        "from flexa.main import resolve_output_dir\n"
+        "print(resolve_output_dir('', 'output-dir-windows'))",
+    )
+    assert output == "None"
+
+
 def test_validate_output_dir_accepts_writable_dir(tmp_path):
     target = tmp_path / "ok"
     output = _run(

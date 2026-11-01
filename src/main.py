@@ -68,6 +68,11 @@ def _default_output_dir(key: str) -> Path | None:
     return Path(_DEFAULT_OUTPUT_DIRS.get(key, "~")).expanduser()
 
 
+def resolve_output_dir(raw: str, key: str) -> Path | None:
+    """Use the configured path when set; Documents defaults only apply when empty."""
+    return Path(raw).expanduser() if raw else _default_output_dir(key)
+
+
 def _validate_output_dir(path: Path) -> str | None:
     """Create path if needed and check it is writable; return the error or None."""
     try:
@@ -575,7 +580,7 @@ class FlexaApplication(Adw.Application):
                 return
 
         raw = self.settings.get_string(output_key)
-        output_dir = Path(raw).expanduser() if raw else _default_output_dir(output_key)
+        output_dir = resolve_output_dir(raw, output_key)
         if output_dir is None:
             self._show_missing_documents_dialog()
             return
@@ -763,7 +768,7 @@ class FlexaApplication(Adw.Application):
     def on_open_output_dir(self, _toast, mode: ConversionMode):
         output_key = "output-dir" if mode == ConversionMode.TO_LINUX else "output-dir-windows"
         raw = self.settings.get_string(output_key)
-        output_path = Path(raw).expanduser() if raw else _default_output_dir(output_key)
+        output_path = resolve_output_dir(raw, output_key)
         if output_path is None:
             debug("Cannot open output directory: no Documents folder configured")
             return
