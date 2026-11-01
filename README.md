@@ -35,6 +35,23 @@
 - Add cursor folders manually or just drag them in
 - Configurable output directories for both modes
 
+## Screenshots
+
+<table role="presentation">
+<tr>
+<td align="center">
+<img src="./screenshots/to-linux.png" width="320" alt="Windows cursor themes ready to convert to Linux" />
+<br />
+<sub>To Linux</sub>
+</td>
+<td align="center">
+<img src="./screenshots/to-windows.png" width="320" alt="Linux cursor themes ready to convert to Windows" />
+<br />
+<sub>To Windows</sub>
+</td>
+</tr>
+</table>
+
 ## Installation
 
 ### Installing win2xcur
