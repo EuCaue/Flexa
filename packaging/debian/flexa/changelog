@@ -1,3 +1,13 @@
+flexa (1.2.3-1) unstable; urgency=medium
+
+  * Resolve Windows output paths from the XDG documents directory
+  * Show an error when the output folder cannot be written
+  * Complete the Brazilian Portuguese translation
+  * Trim the Flatpak package and update its dependencies
+  * Refresh AppStream metadata, screenshots and README
+
+ -- caue <caue@fedora>  Sun, 01 Nov 2026 20:30:00 +0000
+
 flexa (1.2.2-1) unstable; urgency=medium
 
   * Add scalable cursors for GNOME Shell 51

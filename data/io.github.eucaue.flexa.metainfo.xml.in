@@ -53,6 +53,18 @@
   </screenshots>
 
   <releases>
+    <release version="1.2.3" date="2026-11-01">
+      <description translate="no">
+        <p>Localized output paths and Flathub fixes</p>
+        <ul>
+          <li>Resolve the Windows output directory from the XDG documents directory</li>
+          <li>Show an error when the output folder cannot be created or written</li>
+          <li>Complete the Brazilian Portuguese translation</li>
+          <li>Update ImageMagick to 7.1.2-34 and trim the Flatpak package</li>
+          <li>Refresh AppStream metadata, screenshots and README</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.2.2" date="2026-10-30">
       <description translate="no">
         <p>Scalable cursors for GNOME Shell 51</p>
