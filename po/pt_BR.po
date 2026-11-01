@@ -23,29 +23,30 @@ msgid "Flexa"
 msgstr ""
 
 #: data/io.github.eucaue.flexa.desktop.in:3
-#, fuzzy
 msgid "Cursor Theme Converter"
-msgstr "Conversor de Cursores do Windows"
+msgstr "Conversor de temas de cursor"
 
 #: data/io.github.eucaue.flexa.desktop.in:4
 #: data/io.github.eucaue.flexa.metainfo.xml.in:8
-#, fuzzy
 msgid "Convert cursor themes between Windows and Linux formats"
-msgstr "Converter temas de cursor do Windows para o formato Linux"
+msgstr "Converta temas de cursor entre os formatos do Windows e do Linux"
+
+#: data/io.github.eucaue.flexa.metainfo.xml.in:8
+msgid "Convert cursor themes"
+msgstr "Converter temas de cursor"
 
 #: data/io.github.eucaue.flexa.desktop.in:10
 msgid "cursor;theme;convert;windows;linux;mouse;pointer;"
 msgstr ""
 
 #: data/io.github.eucaue.flexa.metainfo.xml.in:10
-#, fuzzy
 msgid ""
 "Flexa is a GNOME application that converts cursor themes between Windows "
 "(.cur and .ani files) and Linux XCursor formats. It provides a clean, "
 "intuitive interface following the GNOME Human Interface Guidelines."
 msgstr ""
-"O Flexa é um aplicativo GNOME simples para converter temas de cursor do "
-"Windows (arquivos .cur e .ani) para o formato XCursor do Linux. Ele tem uma "
+"O Flexa é um aplicativo GNOME que converte temas de cursor entre os formatos "
+"do Windows (arquivos .cur e .ani) e o XCursor do Linux. Ele oferece uma "
 "interface limpa e intuitiva que segue as diretrizes de interface do GNOME."
 
 #: data/io.github.eucaue.flexa.metainfo.xml.in:16
@@ -74,9 +75,9 @@ msgstr ""
 msgid "caue"
 msgstr ""
 
-#: data/io.github.eucaue.flexa.metainfo.xml.in:53
-msgid "Main window with cursor folders added"
-msgstr "Janela principal com pastas de cursor adicionadas"
+#: data/io.github.eucaue.flexa.metainfo.xml.in:51
+msgid "Windows cursor themes added for conversion to Linux"
+msgstr "Temas de cursor do Windows adicionados para conversão para Linux"
 
 #: data/io.github.eucaue.flexa.gschema.xml:6
 msgid "Output Directory"
@@ -87,14 +88,12 @@ msgid "Directory where converted cursors are saved."
 msgstr "Diretório onde os cursores convertidos são salvos."
 
 #: data/io.github.eucaue.flexa.gschema.xml:11
-#, fuzzy
 msgid "Windows Output Directory"
-msgstr "Diretório de Saída"
+msgstr "Diretório de saída do Windows"
 
 #: data/io.github.eucaue.flexa.gschema.xml:12
-#, fuzzy
 msgid "Directory where converted Windows cursors are saved."
-msgstr "Diretório onde os cursores convertidos são salvos."
+msgstr "Diretório onde os cursores convertidos do Windows são salvos."
 
 #: data/io.github.eucaue.flexa.gschema.xml:16
 msgid "Linux Fallback Cursor Theme"
@@ -122,11 +121,10 @@ msgid "Drag folders here or click the button below"
 msgstr "Arraste pastas aqui ou clique no botão embaixo"
 
 #: src/main.py:165
-#, fuzzy
 msgid "A GNOME app to convert cursor themes between Windows and Linux formats."
 msgstr ""
-"Um aplicativo GNOME simples para converter temas de cursor do Windows para o "
-"formato Linux."
+"Um aplicativo GNOME para converter temas de cursor entre os formatos do "
+"Windows e do Linux."
 
 #: src/main.py:168
 msgid "EuCaue"
@@ -141,23 +139,21 @@ msgid "Quick Lofi"
 msgstr "Quick Lofi"
 
 #: src/main.py:191
-#, fuzzy
 msgid "Select Windows cursor folders"
-msgstr "Selecionar pastas de cursor"
+msgstr "Selecionar pastas de cursor do Windows"
 
 #: src/main.py:193
-#, fuzzy
 msgid "Select Linux cursor theme folders"
-msgstr "Selecionar pastas de cursor"
+msgstr "Selecionar pastas de temas de cursor do Linux"
 
 #: src/main.py:297
 msgid "Expected *.cur, *.ani or install.inf inside the folder."
 msgstr "Só aceitamos arquivos *.cur, *.ani ou install.inf dentro da pasta."
 
 #: src/main.py:299
-#, fuzzy
 msgid "Expected a 'cursors' subdirectory or Xcursor files inside the folder."
-msgstr "Só aceitamos arquivos *.cur, *.ani ou install.inf dentro da pasta."
+msgstr ""
+"Esperava um subdiretório 'cursors' ou arquivos Xcursor dentro da pasta."
 
 #: src/main.py:302
 msgid "No cursor files found"
@@ -179,13 +175,33 @@ msgstr "Fallback indisponível"
 msgid "Selected folder is unavailable or has no compatible cursors."
 msgstr "A pasta selecionada não está disponível ou não tem cursores compatíveis."
 
+#: src/main.py:612
+msgid "No Documents folder"
+msgstr "Pasta Documentos não encontrada"
+
+#: src/main.py:614
+msgid ""
+"Flexa could not find your Documents folder. Choose an output folder in "
+"Preferences and try again."
+msgstr ""
+"O Flexa não encontrou sua pasta Documentos. Escolha uma pasta de saída nas "
+"Preferências e tente novamente."
+
+#: src/main.py:624
+msgid "Output folder unavailable"
+msgstr "Pasta de saída indisponível"
+
+#: src/main.py:625
+msgid "Flexa cannot create or write to the output folder:"
+msgstr "O Flexa não conseguiu criar ou gravar na pasta de saída:"
+
 #: src/main.py:497 src/main.py:512 src/main.py:530 src/main.py:551
 msgid "Close"
-msgstr ""
+msgstr "Fechar"
 
 #: src/main.py:503
 msgid "x2wincurtheme Not Found"
-msgstr ""
+msgstr "x2wincurtheme não encontrado"
 
 #: src/main.py:505
 msgid ""
@@ -195,14 +211,19 @@ msgid ""
 "It is included in the <b>win2xcur</b> package. Install with:\n"
 "<tt>pip install win2xcur</tt>"
 msgstr ""
+"O Flexa precisa do <b>x2wincurtheme</b> para converter cursores do Linux para "
+"o Windows, mas ele não foi encontrado no seu sistema.\n"
+"\n"
+"Ele está incluído no pacote <b>win2xcur</b>. Instale com:\n"
+"<tt>pip install win2xcur</tt>"
 
 #: src/main.py:513 src/main.py:531
 msgid "Open win2xcur page"
-msgstr ""
+msgstr "Abrir página do win2xcur"
 
 #: src/main.py:521
 msgid "win2xcur Not Found"
-msgstr ""
+msgstr "win2xcur não encontrado"
 
 #: src/main.py:523
 msgid ""
@@ -212,13 +233,17 @@ msgid ""
 "Install it with:\n"
 "<tt>pip install win2xcur</tt>"
 msgstr ""
+"O Flexa precisa do <b>win2xcur</b> para converter arquivos de cursor, mas ele "
+"não foi encontrado no seu sistema.\n"
+"\n"
+"Instale com:\n"
+"<tt>pip install win2xcur</tt>"
 
 #: src/main.py:544
 msgid "ImageMagick 7.0 Required"
 msgstr "ImageMagick 7.0 Obrigatório"
 
 #: src/main.py:546
-#, fuzzy
 msgid ""
 "win2xcur needs <b>ImageMagick 7.0</b> or newer to convert cursor files.\n"
 "\n"

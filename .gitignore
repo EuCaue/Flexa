@@ -35,3 +35,7 @@ dist/
 /flexa.flatpak
 /repo/
 /flatpak-github-action-modified-*
+
+# Generated build artifacts (meson gettext, Windows workflow)
+/po/*.mo
+/data/icons/flexa.ico

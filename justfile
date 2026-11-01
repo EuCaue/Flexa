@@ -77,12 +77,12 @@ act-deb:
 # Lint flatpak manifest via flathub container
 lint-manifest manifest="io.github.eucaue.flexa.json":
     mkdir -p /tmp/flexa-lintwork && cp "{{manifest}}" /tmp/flexa-lintwork/io.github.eucaue.flexa.json
-    podman run --rm -v "/tmp/flexa-lintwork:/work:U,z" -v "{{justfile_directory()}}/packaging/flathub/exceptions.json:/exceptions.json:ro,z" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged --exceptions --user-exceptions /exceptions.json manifest io.github.eucaue.flexa.json; status=$?; podman unshare chown -R 0:0 /tmp/flexa-lintwork; exit $status
+    podman run --rm -v "/tmp/flexa-lintwork:/work:U,z" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged manifest io.github.eucaue.flexa.json; status=$?; podman unshare chown -R 0:0 /tmp/flexa-lintwork; exit $status
 
 # Lint exported ostree repo via flathub container (run after build with --repo=repo)
 # appstream-external-screenshot-url is expected locally: Flathub CI mirrors screenshots
 lint-repo:
-    podman run --rm -v "{{justfile_directory()}}/repo:/work:U" -v "{{justfile_directory()}}/packaging/flathub/exceptions.json:/exceptions.json:ro" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged --exceptions --user-exceptions /exceptions.json repo /work; status=$?; podman unshare chown -R 0:0 "{{justfile_directory()}}/repo"; exit $status
+    podman run --rm -v "{{justfile_directory()}}/repo:/work:U" -w /work ghcr.io/flathub-infra/flatpak-builder-lint:unprivileged repo /work; status=$?; podman unshare chown -R 0:0 "{{justfile_directory()}}/repo"; exit $status
 
 # Generate the Flathub manifest from a pushed release tag (e.g. just flathub-manifest v1.2.2)
 flathub-manifest tag:

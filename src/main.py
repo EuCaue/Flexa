@@ -18,6 +18,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import sys
+import tempfile
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import Enum
@@ -37,6 +38,7 @@ from .cursor_converter import (
     ConversionStatus,
     CursorConverter,
     ReverseCursorConverter,
+    documents_dir,
     host_path,
     short_home,
 )
@@ -56,12 +58,30 @@ def gtk_escape(text: str) -> str:
 
 _DEFAULT_OUTPUT_DIRS = {
     "output-dir": "~/.local/share/icons",
-    "output-dir-windows": "~/Documents/Windows Cursors",
 }
 
 
-def _default_output_dir(key: str) -> Path:
+def _default_output_dir(key: str) -> Path | None:
+    if key == "output-dir-windows":
+        documents = documents_dir()
+        return documents / "Windows Cursors" if documents else None
     return Path(_DEFAULT_OUTPUT_DIRS.get(key, "~")).expanduser()
+
+
+def resolve_output_dir(raw: str, key: str) -> Path | None:
+    """Use the configured path when set; Documents defaults only apply when empty."""
+    return Path(raw).expanduser() if raw else _default_output_dir(key)
+
+
+def _validate_output_dir(path: Path) -> str | None:
+    """Create path if needed and check it is writable; return the error or None."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryFile(dir=path):
+            pass
+    except OSError as err:
+        return str(err)
+    return None
 
 
 class ConversionMode(Enum):
@@ -559,12 +579,19 @@ class FlexaApplication(Adw.Application):
                 self._show_invalid_fallback_dialog(fallback_path)
                 return
 
+        raw = self.settings.get_string(output_key)
+        output_dir = resolve_output_dir(raw, output_key)
+        if output_dir is None:
+            self._show_missing_documents_dialog()
+            return
+        error = _validate_output_dir(output_dir)
+        if error:
+            self._show_output_dir_error_dialog(error)
+            return
+
         btn.set_sensitive(False)
         self.window.btn_add.set_sensitive(False)
         btn.set_child(Gtk.Spinner(spinning=True))
-
-        raw = self.settings.get_string(output_key)
-        output_dir = Path(raw).expanduser() if raw else _default_output_dir(output_key)
 
         if mode == ConversionMode.TO_LINUX:
             converter: BaseCursorConverter = CursorConverter(
@@ -584,6 +611,27 @@ class FlexaApplication(Adw.Application):
         self.converters[mode] = converter
         converter.add_many([Path(f.folder_path) for f in self.folder_rows[mode]])
         converter.start()
+
+    def _show_missing_documents_dialog(self):
+        dialog = Adw.AlertDialog(
+            heading=_("No Documents folder"),
+            body=_(
+                "Flexa could not find your Documents folder. "
+                "Choose an output folder in Preferences and try again."
+            ),
+        )
+        dialog.add_response("close", _("Close"))
+        dialog.set_default_response("close")
+        dialog.present(self.window)
+
+    def _show_output_dir_error_dialog(self, error: str):
+        dialog = Adw.AlertDialog(
+            heading=_("Output folder unavailable"),
+            body=_("Flexa cannot create or write to the output folder:") + f"\n\n{error}",
+        )
+        dialog.add_response("close", _("Close"))
+        dialog.set_default_response("close")
+        dialog.present(self.window)
 
     def _show_invalid_fallback_dialog(self, fallback_path: Path):
         dialog = Adw.AlertDialog(
@@ -720,7 +768,10 @@ class FlexaApplication(Adw.Application):
     def on_open_output_dir(self, _toast, mode: ConversionMode):
         output_key = "output-dir" if mode == ConversionMode.TO_LINUX else "output-dir-windows"
         raw = self.settings.get_string(output_key)
-        output_path = Path(raw).expanduser() if raw else _default_output_dir(output_key)
+        output_path = resolve_output_dir(raw, output_key)
+        if output_path is None:
+            debug("Cannot open output directory: no Documents folder configured")
+            return
         file = Gio.File.new_for_path(str(output_path))
         launcher = Gtk.FileLauncher.new(file)
         try:

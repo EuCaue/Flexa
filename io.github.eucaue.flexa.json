@@ -21,7 +21,13 @@
     "/share/man",
     "/share/pkgconfig",
     "*.la",
-    "*.a"
+    "*.a",
+    "/lib/python3.*/site-packages/numpy/*/tests",
+    "/lib/python3.*/site-packages/numpy/tests",
+    "/lib/python3.*/site-packages/mesonpy",
+    "/lib/python3.*/site-packages/meson_python-*",
+    "/lib/python3.*/site-packages/pyproject_metadata",
+    "/lib/python3.*/site-packages/pyproject_metadata-*"
   ],
   "modules": [
     {
@@ -29,7 +35,6 @@
       "buildsystem": "autotools",
       "config-opts": [
         "--prefix=/app",
-        "--disable-modules",
         "--disable-static",
         "--without-perl",
         "--without-x",
@@ -48,8 +53,15 @@
       "sources": [
         {
           "type": "archive",
-          "url": "https://github.com/ImageMagick/ImageMagick/archive/refs/tags/7.1.1-43.tar.gz",
-          "sha256": "ceb972266b23dc7c1cfce0da5a7f0c9acfb4dc81f40eb542a49476fedbc2618f"
+          "url": "https://github.com/ImageMagick/ImageMagick/releases/download/7.1.2-34/ImageMagick-7.1.2-34.tar.xz",
+          "sha256": "55fe0ec246245b46c429f9e6bc65294ad4a78a66b88abd9817971ca157856323",
+          "x-checker-data": {
+            "type": "json",
+            "url": "https://api.github.com/repos/ImageMagick/ImageMagick/releases/latest",
+            "version-query": ".tag_name",
+            "url-query": ".assets[] | select(.name == \"ImageMagick-\" + $version + \".tar.xz\") | .browser_download_url",
+            "timestamp-query": ".published_at"
+          }
         }
       ]
     },
