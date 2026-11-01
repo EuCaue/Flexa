@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flexa\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 19:17-0300\n"
+"POT-Creation-Date: 2026-11-01 14:54-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -65,7 +65,7 @@ msgid "caue"
 msgstr ""
 
 #: data/io.github.eucaue.flexa.metainfo.xml.in:51
-msgid "Main window with cursor folders added"
+msgid "Windows cursor themes added for conversion to Linux"
 msgstr ""
 
 #: data/io.github.eucaue.flexa.gschema.xml:6
@@ -116,107 +116,107 @@ msgstr ""
 msgid "Root folder scanned for Windows cursor folders to fill missing cursors."
 msgstr ""
 
-#: src/main.py:119 src/main.py:124
+#: src/main.py:124 src/main.py:129
 msgid "No Folders Added"
 msgstr ""
 
-#: src/main.py:120 src/main.py:125
+#: src/main.py:125 src/main.py:130
 msgid "Drag folders here or click the button below"
 msgstr ""
 
-#: src/main.py:210
+#: src/main.py:215
 msgid "A GNOME app to convert cursor themes between Windows and Linux formats."
 msgstr ""
 
-#: src/main.py:213
+#: src/main.py:218
 msgid "EuCaue"
 msgstr ""
 
-#: src/main.py:217
+#: src/main.py:222
 msgid "Donate"
 msgstr ""
 
-#: src/main.py:218
+#: src/main.py:223
 msgid "Quick Lofi"
 msgstr ""
 
-#: src/main.py:237
+#: src/main.py:242
 msgid "Select Windows cursor folders"
 msgstr ""
 
-#: src/main.py:239
+#: src/main.py:244
 msgid "Select Linux cursor theme folders"
 msgstr ""
 
-#: src/main.py:390
+#: src/main.py:395
 msgid "Expected *.cur, *.ani or install.inf inside the folder."
 msgstr ""
 
-#: src/main.py:392
+#: src/main.py:397
 msgid "Expected a 'cursors' subdirectory or Xcursor files inside the folder."
 msgstr ""
 
-#: src/main.py:395
+#: src/main.py:400
 msgid "No cursor files found"
 msgstr ""
 
-#: src/main.py:398 src/preferences.py:280
+#: src/main.py:403 src/preferences.py:280
 msgid "OK"
 msgstr ""
 
-#: src/main.py:412 src/main.py:458
+#: src/main.py:417 src/main.py:463
 msgid "Remove"
 msgstr ""
 
-#: src/main.py:452
+#: src/main.py:457
 msgid "Remove from list?"
 msgstr ""
 
-#: src/main.py:453
+#: src/main.py:458
 #, python-brace-format
 msgid "“{name}” will be removed from the list. Files on disk are not deleted."
 msgstr ""
 
-#: src/main.py:457
+#: src/main.py:462
 msgid "Cancel"
 msgstr ""
 
-#: src/main.py:612
+#: src/main.py:617
 msgid "No Documents folder"
 msgstr ""
 
-#: src/main.py:614
+#: src/main.py:619
 msgid ""
 "Flexa could not find your Documents folder. Choose an output folder in "
 "Preferences and try again."
 msgstr ""
 
-#: src/main.py:618 src/main.py:627 src/main.py:637 src/main.py:652
-#: src/main.py:670 src/main.py:691
+#: src/main.py:623 src/main.py:632 src/main.py:642 src/main.py:657
+#: src/main.py:675 src/main.py:696
 msgid "Close"
 msgstr ""
 
-#: src/main.py:624
+#: src/main.py:629
 msgid "Output folder unavailable"
 msgstr ""
 
-#: src/main.py:625
+#: src/main.py:630
 msgid "Flexa cannot create or write to the output folder:"
 msgstr ""
 
-#: src/main.py:633
+#: src/main.py:638
 msgid "Fallback unavailable"
 msgstr ""
 
-#: src/main.py:634
+#: src/main.py:639
 msgid "Selected folder is unavailable or has no compatible cursors."
 msgstr ""
 
-#: src/main.py:643
+#: src/main.py:648
 msgid "x2wincurtheme Not Found"
 msgstr ""
 
-#: src/main.py:645
+#: src/main.py:650
 msgid ""
 "Flexa requires <b>x2wincurtheme</b> to convert Linux cursors to Windows, but "
 "it could not be found on your system.\n"
@@ -225,15 +225,15 @@ msgid ""
 "<tt>pip install win2xcur</tt>"
 msgstr ""
 
-#: src/main.py:653 src/main.py:671
+#: src/main.py:658 src/main.py:676
 msgid "Open win2xcur page"
 msgstr ""
 
-#: src/main.py:661
+#: src/main.py:666
 msgid "win2xcur Not Found"
 msgstr ""
 
-#: src/main.py:663
+#: src/main.py:668
 msgid ""
 "Flexa requires <b>win2xcur</b> to convert cursor files, but it could not be "
 "found on your system.\n"
@@ -242,36 +242,36 @@ msgid ""
 "<tt>pip install win2xcur</tt>"
 msgstr ""
 
-#: src/main.py:684
+#: src/main.py:689
 msgid "ImageMagick 7.0 Required"
 msgstr ""
 
-#: src/main.py:686
+#: src/main.py:691
 msgid ""
 "win2xcur needs <b>ImageMagick 7.0</b> or newer to convert cursor files.\n"
 "\n"
 "Install ImageMagick 7.0+ and restart Flexa."
 msgstr ""
 
-#: src/main.py:692
+#: src/main.py:697
 msgid "Download ImageMagick"
 msgstr ""
 
-#: src/main.py:730 src/window.ui:85 src/window.ui:138
+#: src/main.py:735 src/window.ui:85 src/window.ui:138
 msgid "Convert"
-msgstr ""
-
-#: src/main.py:750
-#, python-brace-format
-msgid "Converted {done} of {total} cursor theme{plural}"
 msgstr ""
 
 #: src/main.py:755
 #, python-brace-format
+msgid "Converted {done} of {total} cursor theme{plural}"
+msgstr ""
+
+#: src/main.py:760
+#, python-brace-format
 msgid "Converted {done} of {total} cursor theme{plural}; {failed} failed"
 msgstr ""
 
-#: src/main.py:759
+#: src/main.py:764
 msgid "Open"
 msgstr ""
 
