@@ -118,6 +118,49 @@ def test_custom_output_dir_bypasses_documents_default(tmp_path):
     assert output == "/tmp/custom-cursors"
 
 
+def test_portal_output_takes_precedence(tmp_path):
+    portal = tmp_path / "portal-dir"
+    portal.mkdir()
+    home = _fake_home(tmp_path, None)
+    output = _run(
+        home,
+        "from flexa.main import resolve_output_dir\n"
+        f"print(resolve_output_dir('/tmp/host-dir', 'output-dir-windows', {str(portal)!r}))",
+    )
+    assert output == str(portal)
+
+
+def test_portal_output_falls_back_when_missing(tmp_path):
+    home = _fake_home(tmp_path, None)
+    output = _run(
+        home,
+        "from flexa.main import resolve_output_dir\n"
+        "print(resolve_output_dir('/tmp/host-dir', 'output-dir-windows', "
+        f"{str(tmp_path / 'gone')!r}))",
+    )
+    assert output == "/tmp/host-dir"
+
+
+def test_split_portal_path_returns_host_and_portal(tmp_path):
+    home = _fake_home(tmp_path, None)
+    portal_root = tmp_path / "doc"
+    entry = portal_root / "id" / "custom-folder-windows"
+    entry.mkdir(parents=True)
+    os.setxattr(
+        entry,
+        "user.document-portal.host-path",
+        b"/home/caue/custom-folder-windows\x00",
+    )
+    output = _run(
+        home,
+        "from pathlib import Path\n"
+        "import flexa.cursor_converter as cc\n"
+        f"cc._DOCUMENT_PORTAL_ROOT = Path({str(portal_root)!r})\n"
+        f"print(*cc.split_portal_path({str(entry)!r}), sep='|')",
+    )
+    assert output == "/home/caue/custom-folder-windows|" + str(entry)
+
+
 def test_empty_output_dir_still_needs_documents_in_flatpak(tmp_path):
     home = _fake_home(tmp_path, None)
     output = _run(

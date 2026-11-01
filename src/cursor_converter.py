@@ -76,6 +76,20 @@ def short_home(path: str) -> str:
     return path
 
 
+def split_portal_path(path: str) -> tuple[str, str]:
+    """Return the user-facing path and the portal path for a selected folder.
+
+    File chooser results outside the sandbox grants live under
+    /run/user/UID/doc/<id>/<name>. The host path comes from the portal xattr and
+    is what the user should see and edit; the portal path is kept separately so
+    conversions can still reach the selected folder.
+    """
+    host = host_path(path)
+    if host != path:
+        return short_home(host), path
+    return short_home(path), ""
+
+
 def documents_dir() -> Path | None:
     """Return the user's documents directory, or None when there is no safe one.
 
@@ -316,9 +330,7 @@ class BaseCursorConverter:
     _folders: list[Path] = field(default_factory=list, init=False, repr=False)
     _results: list[ConversionResult] = field(default_factory=list, init=False, repr=False)
     _skipped: set[Path] = field(default_factory=set, init=False, repr=False)
-    _cancellables: dict[Path, Gio.Cancellable] = field(
-        default_factory=dict, init=False, repr=False
-    )
+    _cancellables: dict[Path, Gio.Cancellable] = field(default_factory=dict, init=False, repr=False)
     _is_running: bool = field(default=False, init=False, repr=False)
 
     @classmethod
@@ -634,9 +646,7 @@ class CursorConverter(BaseCursorConverter):
 
                 generated = Path(temp_dir) / src_file.stem
                 if not generated.exists():
-                    raise FileNotFoundError(
-                        f"win2xcur did not produce output for {src_file.name}"
-                    )
+                    raise FileNotFoundError(f"win2xcur did not produce output for {src_file.name}")
 
                 shutil.move(str(generated), str(out_file))
 

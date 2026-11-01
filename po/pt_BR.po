@@ -96,6 +96,22 @@ msgid "Directory where converted Windows cursors are saved."
 msgstr "Diretório onde os cursores convertidos do Windows são salvos."
 
 #: data/io.github.eucaue.flexa.gschema.xml:16
+msgid "Linux Output Portal Path"
+msgstr "Caminho de portal da saída Linux"
+
+#: data/io.github.eucaue.flexa.gschema.xml:17
+msgid "Portal path backing the Linux output directory."
+msgstr "Caminho de portal que dá suporte ao diretório de saída do Linux."
+
+#: data/io.github.eucaue.flexa.gschema.xml:21
+msgid "Windows Output Portal Path"
+msgstr "Caminho de portal da saída do Windows"
+
+#: data/io.github.eucaue.flexa.gschema.xml:22
+msgid "Portal path backing the Windows output directory."
+msgstr "Caminho de portal que dá suporte ao diretório de saída do Windows."
+
+#: data/io.github.eucaue.flexa.gschema.xml:16
 msgid "Linux Fallback Cursor Theme"
 msgstr "Tema de cursor de fallback do Linux"
 

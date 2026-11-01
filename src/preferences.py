@@ -16,6 +16,7 @@ from .cursor_converter import (
     documents_dir,
     host_path,
     short_home,
+    split_portal_path,
     stored_path,
 )
 from .debug import debug
@@ -37,7 +38,7 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
     btn_browse_fallback_linux: Gtk.Button = Gtk.Template.Child()
     btn_browse_fallback_windows: Gtk.Button = Gtk.Template.Child()
 
-    def _select_output_folder(self, target_row: Adw.EntryRow) -> None:
+    def _select_output_folder(self, target_row: Adw.EntryRow, key: str) -> None:
         dialog = Gtk.FileDialog()
         parent = cast(Gtk.Window | None, self.get_root())
 
@@ -47,15 +48,33 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
                 if folder:
                     path = folder.get_path()
                     if path:
-                        parsed_path = self._parse_home_folder(path)
-                        target_row.set_text(parsed_path)
+                        display, portal = split_portal_path(path)
+                        portal_key = f"{key}-portal"
+                        self._suppress_output_sync = True
+                        try:
+                            self.settings.set_string(key, display)
+                            self.settings.set_string(portal_key, portal)
+                            target_row.set_text(display)
+                        finally:
+                            self._suppress_output_sync = False
             except GLib.GError as err:
                 debug(f"Folder selection error: {err}")
 
         dialog.select_folder(parent=parent, callback=_on_finish)
 
-    def _parse_home_folder(self, path: str) -> str:
-        return short_home(stored_path(path))
+    def _on_output_row_changed(self, _row: Adw.EntryRow, key: str) -> None:
+        if self._suppress_output_sync:
+            return
+        self.settings.set_string(f"{key}-portal", "")
+
+    def _migrate_portal_setting(self, key: str) -> None:
+        raw = self.settings.get_string(key)
+        portal_key = f"{key}-portal"
+        if raw.startswith("/run/user/") and not self.settings.get_string(portal_key):
+            display, portal = split_portal_path(raw)
+            if portal:
+                self.settings.set_string(key, display)
+                self.settings.set_string(portal_key, portal)
 
     @staticmethod
     def _has_linux_cursors(path: Path) -> bool:
@@ -306,6 +325,9 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
     def __init__(self, settings: Gio.Settings, **kwargs) -> None:
         super().__init__(**kwargs)
         self.settings = settings
+        self._suppress_output_sync = False
+        self._migrate_portal_setting("output-dir")
+        self._migrate_portal_setting("output-dir-windows")
         self.settings.bind("output-dir", self.output_dir_row, "text", Gio.SettingsBindFlags.DEFAULT)
         if self.settings.get_string("output-dir") == "":
             if os.name == "nt":
@@ -328,11 +350,17 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
                     short_home(str(documents / "Windows Cursors")) if documents else ""
                 )
 
+        self.output_dir_row.connect("changed", self._on_output_row_changed, "output-dir")
+        self.output_dir_windows_row.connect(
+            "changed", self._on_output_row_changed, "output-dir-windows"
+        )
+
         self.btn_browse_output.connect(
-            "clicked", lambda _: self._select_output_folder(self.output_dir_row)
+            "clicked", lambda _: self._select_output_folder(self.output_dir_row, "output-dir")
         )
         self.btn_browse_output_windows.connect(
-            "clicked", lambda _: self._select_output_folder(self.output_dir_windows_row)
+            "clicked",
+            lambda _: self._select_output_folder(self.output_dir_windows_row, "output-dir-windows"),
         )
         self.btn_browse_fallback_linux.connect(
             "clicked", lambda _: self._select_fallback_root("linux")

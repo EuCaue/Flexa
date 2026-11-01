@@ -3,11 +3,12 @@ default:
 
 # Build the flatpak application
 build:
-    flatpak-builder --ccache --user --force-clean _build io.github.eucaue.flexa.json
+    flatpak-builder --ccache --jobs=4 --force-clean --repo=repo _build io.github.eucaue.flexa.json
 
-# Install the flatpak application
-install:
-    flatpak-builder --ccache --user --install --force-clean _build io.github.eucaue.flexa.json
+# Install the flatpak application and its locale extension
+install: build
+    flatpak install --user -y --reinstall ./repo io.github.eucaue.flexa
+    flatpak install --user -y --reinstall ./repo io.github.eucaue.flexa.Locale
 
 # Run the installed flatpak application
 run:

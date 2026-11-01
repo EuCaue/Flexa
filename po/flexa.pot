@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flexa\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-01 14:54-0300\n"
+"POT-Creation-Date: 2026-11-01 20:32-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -85,138 +85,154 @@ msgid "Directory where converted Windows cursors are saved."
 msgstr ""
 
 #: data/io.github.eucaue.flexa.gschema.xml:16
-msgid "Linux Fallback Cursor Theme"
+msgid "Linux Output Portal Path"
 msgstr ""
 
 #: data/io.github.eucaue.flexa.gschema.xml:17
-msgid "Cursor theme folder used to fill missing Linux cursors."
+msgid "Portal path backing the Linux output directory."
 msgstr ""
 
 #: data/io.github.eucaue.flexa.gschema.xml:21
-msgid "Windows Fallback Cursor Theme"
+msgid "Windows Output Portal Path"
 msgstr ""
 
 #: data/io.github.eucaue.flexa.gschema.xml:22
-msgid "Cursor folder used to fill missing Windows cursors."
+msgid "Portal path backing the Windows output directory."
 msgstr ""
 
 #: data/io.github.eucaue.flexa.gschema.xml:26
-msgid "Custom Linux Fallback Root"
+msgid "Linux Fallback Cursor Theme"
 msgstr ""
 
 #: data/io.github.eucaue.flexa.gschema.xml:27
-msgid "Root folder scanned for Linux cursor themes to fill missing cursors."
+msgid "Cursor theme folder used to fill missing Linux cursors."
 msgstr ""
 
 #: data/io.github.eucaue.flexa.gschema.xml:31
-msgid "Custom Windows Fallback Root"
+msgid "Windows Fallback Cursor Theme"
 msgstr ""
 
 #: data/io.github.eucaue.flexa.gschema.xml:32
+msgid "Cursor folder used to fill missing Windows cursors."
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:36
+msgid "Custom Linux Fallback Root"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:37
+msgid "Root folder scanned for Linux cursor themes to fill missing cursors."
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:41
+msgid "Custom Windows Fallback Root"
+msgstr ""
+
+#: data/io.github.eucaue.flexa.gschema.xml:42
 msgid "Root folder scanned for Windows cursor folders to fill missing cursors."
 msgstr ""
 
-#: src/main.py:124 src/main.py:129
+#: src/main.py:128 src/main.py:133
 msgid "No Folders Added"
 msgstr ""
 
-#: src/main.py:125 src/main.py:130
+#: src/main.py:129 src/main.py:134
 msgid "Drag folders here or click the button below"
 msgstr ""
 
-#: src/main.py:215
+#: src/main.py:219
 msgid "A GNOME app to convert cursor themes between Windows and Linux formats."
 msgstr ""
 
-#: src/main.py:218
+#: src/main.py:222
 msgid "EuCaue"
 msgstr ""
 
-#: src/main.py:222
+#: src/main.py:226
 msgid "Donate"
 msgstr ""
 
-#: src/main.py:223
+#: src/main.py:227
 msgid "Quick Lofi"
 msgstr ""
 
-#: src/main.py:242
+#: src/main.py:246
 msgid "Select Windows cursor folders"
 msgstr ""
 
-#: src/main.py:244
+#: src/main.py:248
 msgid "Select Linux cursor theme folders"
 msgstr ""
 
-#: src/main.py:395
+#: src/main.py:399
 msgid "Expected *.cur, *.ani or install.inf inside the folder."
 msgstr ""
 
-#: src/main.py:397
+#: src/main.py:401
 msgid "Expected a 'cursors' subdirectory or Xcursor files inside the folder."
 msgstr ""
 
-#: src/main.py:400
+#: src/main.py:404
 msgid "No cursor files found"
 msgstr ""
 
-#: src/main.py:403 src/preferences.py:280
+#: src/main.py:407 src/preferences.py:299
 msgid "OK"
 msgstr ""
 
-#: src/main.py:417 src/main.py:463
+#: src/main.py:421 src/main.py:467
 msgid "Remove"
 msgstr ""
 
-#: src/main.py:457
+#: src/main.py:461
 msgid "Remove from list?"
 msgstr ""
 
-#: src/main.py:458
+#: src/main.py:462
 #, python-brace-format
 msgid "“{name}” will be removed from the list. Files on disk are not deleted."
 msgstr ""
 
-#: src/main.py:462
+#: src/main.py:466
 msgid "Cancel"
 msgstr ""
 
-#: src/main.py:617
+#: src/main.py:622
 msgid "No Documents folder"
 msgstr ""
 
-#: src/main.py:619
+#: src/main.py:624
 msgid ""
 "Flexa could not find your Documents folder. Choose an output folder in "
 "Preferences and try again."
 msgstr ""
 
-#: src/main.py:623 src/main.py:632 src/main.py:642 src/main.py:657
-#: src/main.py:675 src/main.py:696
+#: src/main.py:628 src/main.py:637 src/main.py:647 src/main.py:662
+#: src/main.py:680 src/main.py:701
 msgid "Close"
 msgstr ""
 
-#: src/main.py:629
+#: src/main.py:634
 msgid "Output folder unavailable"
 msgstr ""
 
-#: src/main.py:630
+#: src/main.py:635
 msgid "Flexa cannot create or write to the output folder:"
 msgstr ""
 
-#: src/main.py:638
+#: src/main.py:643
 msgid "Fallback unavailable"
 msgstr ""
 
-#: src/main.py:639
+#: src/main.py:644
 msgid "Selected folder is unavailable or has no compatible cursors."
 msgstr ""
 
-#: src/main.py:648
+#: src/main.py:653
 msgid "x2wincurtheme Not Found"
 msgstr ""
 
-#: src/main.py:650
+#: src/main.py:655
 msgid ""
 "Flexa requires <b>x2wincurtheme</b> to convert Linux cursors to Windows, but "
 "it could not be found on your system.\n"
@@ -225,15 +241,15 @@ msgid ""
 "<tt>pip install win2xcur</tt>"
 msgstr ""
 
-#: src/main.py:658 src/main.py:676
+#: src/main.py:663 src/main.py:681
 msgid "Open win2xcur page"
 msgstr ""
 
-#: src/main.py:666
+#: src/main.py:671
 msgid "win2xcur Not Found"
 msgstr ""
 
-#: src/main.py:668
+#: src/main.py:673
 msgid ""
 "Flexa requires <b>win2xcur</b> to convert cursor files, but it could not be "
 "found on your system.\n"
@@ -242,36 +258,36 @@ msgid ""
 "<tt>pip install win2xcur</tt>"
 msgstr ""
 
-#: src/main.py:689
+#: src/main.py:694
 msgid "ImageMagick 7.0 Required"
 msgstr ""
 
-#: src/main.py:691
+#: src/main.py:696
 msgid ""
 "win2xcur needs <b>ImageMagick 7.0</b> or newer to convert cursor files.\n"
 "\n"
 "Install ImageMagick 7.0+ and restart Flexa."
 msgstr ""
 
-#: src/main.py:697
+#: src/main.py:702
 msgid "Download ImageMagick"
 msgstr ""
 
-#: src/main.py:735 src/window.ui:85 src/window.ui:138
+#: src/main.py:740 src/window.ui:85 src/window.ui:138
 msgid "Convert"
-msgstr ""
-
-#: src/main.py:755
-#, python-brace-format
-msgid "Converted {done} of {total} cursor theme{plural}"
 msgstr ""
 
 #: src/main.py:760
 #, python-brace-format
+msgid "Converted {done} of {total} cursor theme{plural}"
+msgstr ""
+
+#: src/main.py:765
+#, python-brace-format
 msgid "Converted {done} of {total} cursor theme{plural}; {failed} failed"
 msgstr ""
 
-#: src/main.py:764
+#: src/main.py:769
 msgid "Open"
 msgstr ""
 
@@ -315,24 +331,24 @@ msgstr ""
 msgid "Select a folder with cursor themes to fill this list"
 msgstr ""
 
-#: src/preferences.py:160
+#: src/preferences.py:179
 msgid "None"
 msgstr ""
 
-#: src/preferences.py:168
+#: src/preferences.py:187
 #, python-brace-format
 msgid "Unavailable: {path}"
 msgstr ""
 
-#: src/preferences.py:277
+#: src/preferences.py:296
 msgid "No cursor themes found"
 msgstr ""
 
-#: src/preferences.py:278
+#: src/preferences.py:297
 msgid "The selected folder does not contain cursor themes."
 msgstr ""
 
-#: src/preferences.py:358
+#: src/preferences.py:386
 msgid "Loading…"
 msgstr ""
 

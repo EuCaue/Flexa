@@ -11,6 +11,16 @@
 			<summary>Windows Output Directory</summary>
 			<description>Directory where converted Windows cursors are saved.</description>
 		</key>
+		<key name="output-dir-portal" type="s">
+			<default>''</default>
+			<summary>Linux Output Portal Path</summary>
+			<description>Portal path backing the Linux output directory.</description>
+		</key>
+		<key name="output-dir-windows-portal" type="s">
+			<default>''</default>
+			<summary>Windows Output Portal Path</summary>
+			<description>Portal path backing the Windows output directory.</description>
+		</key>
 		<key name="fallback-theme-path-linux" type="s">
 			<default>''</default>
 			<summary>Linux Fallback Cursor Theme</summary>

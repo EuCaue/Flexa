@@ -68,8 +68,12 @@ def _default_output_dir(key: str) -> Path | None:
     return Path(_DEFAULT_OUTPUT_DIRS.get(key, "~")).expanduser()
 
 
-def resolve_output_dir(raw: str, key: str) -> Path | None:
-    """Use the configured path when set; Documents defaults only apply when empty."""
+def resolve_output_dir(raw: str, key: str, portal_raw: str = "") -> Path | None:
+    """Use a live portal path first, then the configured path, then the default."""
+    if portal_raw:
+        portal = Path(portal_raw)
+        if portal.is_dir():
+            return portal
     return Path(raw).expanduser() if raw else _default_output_dir(key)
 
 
@@ -580,7 +584,8 @@ class FlexaApplication(Adw.Application):
                 return
 
         raw = self.settings.get_string(output_key)
-        output_dir = resolve_output_dir(raw, output_key)
+        portal_raw = self.settings.get_string(f"{output_key}-portal")
+        output_dir = resolve_output_dir(raw, output_key, portal_raw)
         if output_dir is None:
             self._show_missing_documents_dialog()
             return
@@ -768,7 +773,8 @@ class FlexaApplication(Adw.Application):
     def on_open_output_dir(self, _toast, mode: ConversionMode):
         output_key = "output-dir" if mode == ConversionMode.TO_LINUX else "output-dir-windows"
         raw = self.settings.get_string(output_key)
-        output_path = resolve_output_dir(raw, output_key)
+        portal_raw = self.settings.get_string(f"{output_key}-portal")
+        output_path = resolve_output_dir(raw, output_key, portal_raw)
         if output_path is None:
             debug("Cannot open output directory: no Documents folder configured")
             return
