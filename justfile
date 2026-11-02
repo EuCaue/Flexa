@@ -89,7 +89,7 @@ lint-repo:
 flathub-manifest tag:
     git ls-remote --exit-code --tags origin "refs/tags/{{tag}}" > /dev/null
     mkdir -p dist/flathub
-    jq --arg tag "{{tag}}" --arg commit "$(git rev-list -n1 '{{tag}}')" \
+    jq --indent 4 --arg tag "{{tag}}" --arg commit "$(git rev-list -n1 '{{tag}}')" \
         '(.modules[] | select(.name == "flexa") | .sources) = [{"type": "git", "url": "https://github.com/eucaue/flexa.git", "tag": $tag, "commit": $commit}]' \
         io.github.eucaue.flexa.json > dist/flathub/io.github.eucaue.flexa.json
 
