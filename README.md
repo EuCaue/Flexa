@@ -1,4 +1,5 @@
 <div align="center">
+<img alt="Flexa icon" src="data/icons/hicolor/scalable/apps/io.github.eucaue.flexa.svg" width="96" />
 <h1>Flexa</h1>
 <a href="https://github.com/eucaue/flexa">
   <img src="https://img.shields.io/badge/Flathub-coming%20soon-yellow" alt="Flathub"/> 
@@ -10,7 +11,7 @@
   <img src="https://img.shields.io/badge/GTK-4.10+-blue" alt="GTK" />
 </a>
 <a href="#">
-  <img src="https://img.shields.io/badge/version-1.2.4-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.2.5-blue" alt="Version" />
 </a>
 <a href="#">
   <img src="https://img.shields.io/badge/python-3.11+-blue" alt="Python" />

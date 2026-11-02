@@ -1,3 +1,10 @@
+flexa (1.2.5-1) unstable; urgency=medium
+
+  * Add new GNOME app icon and symbolic variant
+  * Bundle the icon in the app resources
+
+ -- caue <caue@fedora>  Mon, 02 Nov 2026 19:32:17 +0000
+
 flexa (1.2.4-1) unstable; urgency=medium
 
   * Fix custom output folder paths selected through the file chooser

@@ -1,7 +1,7 @@
 %global appid io.github.eucaue.flexa
 %global debug_package %{nil}
 Name:           flexa
-Version:        1.2.4
+Version:        1.2.5
 Release:        1%{?dist}
 Summary:        Convert Windows cursor themes to Linux format
 License:        GPL-3.0-or-later
@@ -57,5 +57,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{appid}.desktop
 %{_datadir}/icons/hicolor/symbolic/apps/%{appid}-symbolic.svg
 
 %changelog
+* Mon Nov 02 2026 caue <caue@fedora> - 1.2.5-1
+- Add new GNOME app icon and symbolic variant
 * Tue May 26 2026 caue <caue@fedora> - 1.0.0-1
 - Initial package

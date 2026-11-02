@@ -47,12 +47,21 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/eucaue/flexa/v1.2.3/flexa.png</image>
+      <image>https://raw.githubusercontent.com/eucaue/flexa/v1.2.5/flexa.png</image>
       <caption>Windows cursor themes added for conversion to Linux</caption>
     </screenshot>
   </screenshots>
 
   <releases>
+    <release version="1.2.5" date="2026-11-02">
+      <description translate="no">
+        <p>New app icon</p>
+        <ul>
+          <li>Add a GNOME-style app icon with a symbolic variant</li>
+          <li>Bundle the icon in the app resources for the About dialog and window</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.2.4" date="2026-11-01">
       <description translate="no">
         <p>Custom output folder fix</p>
