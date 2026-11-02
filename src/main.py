@@ -219,10 +219,16 @@ class FlexaApplication(Adw.Application):
 
     @staticmethod
     def _restart_spinner(spinner: Gtk.Spinner) -> None:
-        # GTK 4.24 keeps :checked while a spinner is unmapped, so the CSS
-        # animation does not resume when the page is shown again.
+        # GTK 4.24 keeps :checked while a spinner is unmapped. Toggle across
+        # a frame so the CSS animation restarts instead of coalescing.
         spinner.set_spinning(False)
-        spinner.set_spinning(True)
+        GLib.timeout_add(50, FlexaApplication._resume_spinner, spinner)
+
+    @staticmethod
+    def _resume_spinner(spinner: Gtk.Spinner) -> bool:
+        if spinner.get_root() is not None:
+            spinner.set_spinning(True)
+        return GLib.SOURCE_REMOVE
 
     def _create_action(
         self,
