@@ -53,6 +53,15 @@
   </screenshots>
 
   <releases>
+    <release version="1.2.4" date="2026-11-01">
+      <description translate="no">
+        <p>Custom output folder fix</p>
+        <ul>
+          <li>Store custom output folders as host paths while keeping portal access</li>
+          <li>Migrate portal paths saved by 1.2.3</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.2.3" date="2026-11-01">
       <description translate="no">
         <p>Localized output paths and Flathub fixes</p>

@@ -1,3 +1,10 @@
+flexa (1.2.4-1) unstable; urgency=medium
+
+  * Fix custom output folder paths selected through the file chooser
+  * Migrate saved document portal paths
+
+ -- caue <caue@fedora>  Mon, 02 Nov 2026 00:57:00 +0000
+
 flexa (1.2.3-1) unstable; urgency=medium
 
   * Resolve Windows output paths from the XDG documents directory

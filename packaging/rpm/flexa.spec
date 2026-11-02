@@ -1,7 +1,7 @@
 %global appid io.github.eucaue.flexa
 %global debug_package %{nil}
 Name:           flexa
-Version:        1.2.3
+Version:        1.2.4
 Release:        1%{?dist}
 Summary:        Convert Windows cursor themes to Linux format
 License:        GPL-3.0-or-later
