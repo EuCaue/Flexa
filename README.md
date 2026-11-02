@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/GTK-4.10+-blue" alt="GTK" />
 </a>
 <a href="#">
-  <img src="https://img.shields.io/badge/version-1.2.5-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.2.6-blue" alt="Version" />
 </a>
 <a href="#">
   <img src="https://img.shields.io/badge/python-3.11+-blue" alt="Python" />
