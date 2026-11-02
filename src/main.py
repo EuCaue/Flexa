@@ -199,6 +199,31 @@ class FlexaApplication(Adw.Application):
         is_converting = converter is not None and converter.is_running
         btn.set_sensitive(len(rows) > 0 and not is_converting)
 
+    def _on_row_spinner_map(self, spinner: Gtk.Spinner, mode: ConversionMode) -> None:
+        """Restart a row spinner after its hidden page is shown again."""
+        converter = self.converters[mode]
+        stack = spinner.get_parent()
+        if (
+            converter is not None
+            and converter.is_running
+            and isinstance(stack, Gtk.Stack)
+            and stack.get_visible_child_name() == "spinner"
+        ):
+            self._restart_spinner(spinner)
+
+    def _on_button_spinner_map(self, spinner: Gtk.Spinner, mode: ConversionMode) -> None:
+        """Restart the convert button spinner after its page is shown again."""
+        converter = self.converters[mode]
+        if converter is not None and converter.is_running:
+            self._restart_spinner(spinner)
+
+    @staticmethod
+    def _restart_spinner(spinner: Gtk.Spinner) -> None:
+        # GTK 4.24 keeps :checked while a spinner is unmapped, so the CSS
+        # animation does not resume when the page is shown again.
+        spinner.set_spinning(False)
+        spinner.set_spinning(True)
+
     def _create_action(
         self,
         name: str,
@@ -458,6 +483,7 @@ class FlexaApplication(Adw.Application):
             spinner=spinner,
         )
         mode = self.active_mode
+        spinner.connect("map", self._on_row_spinner_map, mode)
         remove_btn.connect("clicked", lambda _: self._confirm_remove_folder(row, row_data, mode))
         self.folder_rows[mode].append(row_data)
         row.add_prefix(folder_icon)
@@ -605,7 +631,9 @@ class FlexaApplication(Adw.Application):
 
         btn.set_sensitive(False)
         self.window.btn_add.set_sensitive(False)
-        btn.set_child(Gtk.Spinner(spinning=True))
+        spinner = Gtk.Spinner(spinning=True)
+        spinner.connect("map", self._on_button_spinner_map, mode)
+        btn.set_child(spinner)
 
         if mode == ConversionMode.TO_LINUX:
             converter: BaseCursorConverter = CursorConverter(
