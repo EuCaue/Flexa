@@ -1,3 +1,10 @@
+flexa (1.2.8-1) unstable; urgency=medium
+
+  * Keep spinners animating after switching tabs
+  * Report failures when opening the output folder
+
+ -- caue <caue@fedora>  Mon, 02 Nov 2026 20:20:00 +0000
+
 flexa (1.2.7-1) unstable; urgency=medium
 
   * Restart spinner animations across a frame after switching tabs

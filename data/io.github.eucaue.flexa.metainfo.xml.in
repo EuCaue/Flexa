@@ -47,12 +47,21 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/eucaue/flexa/v1.2.7/flexa.png</image>
+      <image>https://raw.githubusercontent.com/eucaue/flexa/v1.2.8/flexa.png</image>
       <caption>Windows cursor themes added for conversion to Linux</caption>
     </screenshot>
   </screenshots>
 
   <releases>
+    <release version="1.2.8" date="2026-11-02">
+      <description translate="no">
+        <p>Spinner and output folder fixes</p>
+        <ul>
+          <li>Keep spinners animating after switching tabs</li>
+          <li>Report failures when opening the output folder</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.2.7" date="2026-11-02">
       <description translate="no">
         <p>Spinner restart follow-up</p>
