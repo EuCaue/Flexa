@@ -1,7 +1,7 @@
 %global appid io.github.eucaue.flexa
 %global debug_package %{nil}
 Name:           flexa
-Version:        1.2.6
+Version:        1.2.7
 Release:        1%{?dist}
 Summary:        Convert Windows cursor themes to Linux format
 License:        GPL-3.0-or-later
@@ -57,6 +57,8 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{appid}.desktop
 %{_datadir}/icons/hicolor/symbolic/apps/%{appid}-symbolic.svg
 
 %changelog
+* Mon Nov 02 2026 caue <caue@fedora> - 1.2.7-1
+- Restart spinner animations across a frame after switching tabs
 * Mon Nov 02 2026 caue <caue@fedora> - 1.2.6-1
 - Keep conversion spinners animating after switching tabs
 * Mon Nov 02 2026 caue <caue@fedora> - 1.2.5-1

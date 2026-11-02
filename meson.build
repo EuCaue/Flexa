@@ -1,6 +1,6 @@
 project(
     'flexa',
-    version: '1.2.6',
+    version: '1.2.7',
     meson_version: '>= 1.0.0',
     default_options: [
         'warning_level=2',
