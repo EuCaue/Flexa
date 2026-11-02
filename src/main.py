@@ -137,6 +137,15 @@ class FlexaApplication(Adw.Application):
         self.window: FlexaWindow | None = None
         self.settings = Gio.Settings(schema_id="io.github.eucaue.flexa")
 
+    def do_startup(self):
+        """Register the bundled app icons with the icon theme."""
+        Adw.Application.do_startup(self)
+        display = Gdk.Display.get_default()
+        if display is not None:
+            Gtk.IconTheme.get_for_display(display).add_resource_path(
+                "/io/github/eucaue/flexa/icons"
+            )
+
     def do_activate(self):
         """Called when the application is activated.
 

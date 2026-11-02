@@ -4,6 +4,7 @@
   <requires lib="Adw" version="1.0"/>
   <template class="FlexaWindow" parent="AdwApplicationWindow">
     <property name="title" translatable="yes">Flexa</property>
+    <property name="icon-name">io.github.eucaue.flexa</property>
     <property name="default-width">600</property>
     <property name="default-height">650</property>
     <child>

@@ -5,4 +5,10 @@
     <file preprocess="xml-stripblanks">shortcuts-dialog.ui</file>
     <file preprocess="xml-stripblanks">preferences-dialog.ui</file>
   </gresource>
+  <gresource prefix="/io/github/eucaue/flexa/icons/scalable/apps">
+    <file alias="io.github.eucaue.flexa.svg">../data/icons/hicolor/scalable/apps/io.github.eucaue.flexa.svg</file>
+  </gresource>
+  <gresource prefix="/io/github/eucaue/flexa/icons/symbolic/apps">
+    <file alias="io.github.eucaue.flexa-symbolic.svg">../data/icons/hicolor/symbolic/apps/io.github.eucaue.flexa-symbolic.svg</file>
+  </gresource>
 </gresources>
