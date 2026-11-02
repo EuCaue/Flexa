@@ -393,3 +393,7 @@ msgstr ""
 #: src/window.ui:185
 msgid "_About Flexa"
 msgstr ""
+
+#: src/main.py
+msgid "Could not open the output folder"
+msgstr ""

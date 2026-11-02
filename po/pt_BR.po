@@ -414,3 +414,7 @@ msgstr "Cancelar"
 #: src/preferences.py
 msgid "Loading…"
 msgstr "Carregando…"
+
+#: src/main.py
+msgid "Could not open the output folder"
+msgstr "Não foi possível abrir a pasta de saída"

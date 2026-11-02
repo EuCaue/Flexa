@@ -98,7 +98,7 @@ class RowData:
     row_name: str
     folder_path: str
     stack: Gtk.Stack
-    spinner: Gtk.Spinner
+    spinner: Gtk.Widget
 
 
 class FlexaApplication(Adw.Application):
@@ -199,36 +199,18 @@ class FlexaApplication(Adw.Application):
         is_converting = converter is not None and converter.is_running
         btn.set_sensitive(len(rows) > 0 and not is_converting)
 
-    def _on_row_spinner_map(self, spinner: Gtk.Spinner, mode: ConversionMode) -> None:
-        """Restart a row spinner after its hidden page is shown again."""
-        converter = self.converters[mode]
-        stack = spinner.get_parent()
-        if (
-            converter is not None
-            and converter.is_running
-            and isinstance(stack, Gtk.Stack)
-            and stack.get_visible_child_name() == "spinner"
-        ):
-            self._restart_spinner(spinner)
-
-    def _on_button_spinner_map(self, spinner: Gtk.Spinner, mode: ConversionMode) -> None:
-        """Restart the convert button spinner after its page is shown again."""
-        converter = self.converters[mode]
-        if converter is not None and converter.is_running:
-            self._restart_spinner(spinner)
+    @staticmethod
+    def _make_spinner() -> Gtk.Widget:
+        # Adw.Spinner restarts its animation on map, which Gtk.Spinner does
+        # not do on GTK 4.24. Keep the Gtk fallback for older libadwaita.
+        if hasattr(Adw, "Spinner"):
+            return Adw.Spinner()
+        return Gtk.Spinner()
 
     @staticmethod
-    def _restart_spinner(spinner: Gtk.Spinner) -> None:
-        # GTK 4.24 keeps :checked while a spinner is unmapped. Toggle across
-        # a frame so the CSS animation restarts instead of coalescing.
-        spinner.set_spinning(False)
-        GLib.timeout_add(50, FlexaApplication._resume_spinner, spinner)
-
-    @staticmethod
-    def _resume_spinner(spinner: Gtk.Spinner) -> bool:
-        if spinner.get_root() is not None:
-            spinner.set_spinning(True)
-        return GLib.SOURCE_REMOVE
+    def _set_spinner_active(spinner: Gtk.Widget, active: bool) -> None:
+        if isinstance(spinner, Gtk.Spinner):
+            spinner.set_spinning(active)
 
     def _create_action(
         self,
@@ -469,7 +451,8 @@ class FlexaApplication(Adw.Application):
         status_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         status_stack.set_transition_duration(300)
 
-        spinner = Gtk.Spinner(spinning=False)
+        idle = Gtk.Box(width_request=16, height_request=16)
+        spinner = self._make_spinner()
 
         check = Gtk.Image(icon_name="object-select-symbolic")
         check.add_css_class("success")
@@ -477,10 +460,11 @@ class FlexaApplication(Adw.Application):
         error = Gtk.Image(icon_name="dialog-error-symbolic")
         error.add_css_class("error")
 
+        status_stack.add_named(idle, "idle")
         status_stack.add_named(spinner, "spinner")
         status_stack.add_named(check, "check")
         status_stack.add_named(error, "error")
-        status_stack.set_visible_child_name("spinner")
+        status_stack.set_visible_child_name("idle")
 
         row_data = RowData(
             row_name=row_name,
@@ -489,7 +473,6 @@ class FlexaApplication(Adw.Application):
             spinner=spinner,
         )
         mode = self.active_mode
-        spinner.connect("map", self._on_row_spinner_map, mode)
         remove_btn.connect("clicked", lambda _: self._confirm_remove_folder(row, row_data, mode))
         self.folder_rows[mode].append(row_data)
         row.add_prefix(folder_icon)
@@ -637,8 +620,8 @@ class FlexaApplication(Adw.Application):
 
         btn.set_sensitive(False)
         self.window.btn_add.set_sensitive(False)
-        spinner = Gtk.Spinner(spinning=True)
-        spinner.connect("map", self._on_button_spinner_map, mode)
+        spinner = self._make_spinner()
+        self._set_spinner_active(spinner, True)
         btn.set_child(spinner)
 
         if mode == ConversionMode.TO_LINUX:
@@ -767,13 +750,13 @@ class FlexaApplication(Adw.Application):
             return
         match result.status:
             case ConversionStatus.RUNNING:
-                file.spinner.set_spinning(True)
+                self._set_spinner_active(file.spinner, True)
                 file.stack.set_visible_child_name("spinner")
             case ConversionStatus.DONE:
-                file.spinner.set_spinning(False)
+                self._set_spinner_active(file.spinner, False)
                 file.stack.set_visible_child_name("check")
             case ConversionStatus.CANCELED | ConversionStatus.ERROR:
-                file.spinner.set_spinning(False)
+                self._set_spinner_active(file.spinner, False)
                 file.stack.set_visible_child_name("error")
 
     def _show_done_toast(self, results: list[ConversionResult], mode: ConversionMode):
@@ -814,19 +797,35 @@ class FlexaApplication(Adw.Application):
             self.window.toast_overlay.add_toast(toast)
 
     def on_open_output_dir(self, _toast, mode: ConversionMode):
+        assert self.window is not None
         output_key = "output-dir" if mode == ConversionMode.TO_LINUX else "output-dir-windows"
         raw = self.settings.get_string(output_key)
         portal_raw = self.settings.get_string(f"{output_key}-portal")
         output_path = resolve_output_dir(raw, output_key, portal_raw)
         if output_path is None:
             debug("Cannot open output directory: no Documents folder configured")
+            self._show_open_output_error()
+            return
+        if not output_path.exists():
+            debug(f"Cannot open output directory: {output_path} does not exist")
+            self._show_open_output_error()
             return
         file = Gio.File.new_for_path(str(output_path))
         launcher = Gtk.FileLauncher.new(file)
+        launcher.launch(self.window, None, self._on_open_output_done, None)
+
+    def _on_open_output_done(self, launcher: Gtk.FileLauncher, result: Gio.AsyncResult, _data):
         try:
-            launcher.launch(self.window, None, None)
-        except GLib.GError as err:
+            launcher.launch_finish(result)
+        except GLib.Error as err:
             debug(f"Failed to open output directory: {err}")
+            self._show_open_output_error()
+
+    def _show_open_output_error(self):
+        if self.window is None:
+            return
+        toast = Adw.Toast(title=_("Could not open the output folder"), timeout=5)
+        self.window.toast_overlay.add_toast(toast)
 
 
 def main(version: str = "1.0.0"):
