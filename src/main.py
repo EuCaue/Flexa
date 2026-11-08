@@ -41,6 +41,7 @@ from .cursor_converter import (
     documents_dir,
     host_path,
     short_home,
+    stored_path,
 )
 from .debug import debug
 from .preferences import FallbackScan, FlexaPreferencesDialog
@@ -775,6 +776,14 @@ class FlexaApplication(Adw.Application):
             self.window.btn_add.set_sensitive(True)
 
         self.converters[mode] = None
+
+        fallback_mode = "linux" if mode == ConversionMode.TO_LINUX else "windows"
+        new_paths = [
+            stored_path(str(result.output_path))
+            for result in results
+            if result.status == ConversionStatus.DONE and result.output_path
+        ]
+        FallbackScan.add_paths(fallback_mode, new_paths)
 
         if len(self.folder_rows[mode]) > 0 and results:
             done: int = sum(1 for r in results if r.status == ConversionStatus.DONE)

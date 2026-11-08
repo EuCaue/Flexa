@@ -13,6 +13,8 @@ from gi.repository import Adw, Gio, GLib, GObject, Gtk, Pango
 
 from .cursor_converter import (
     BaseCursorConverter,
+    CursorConverter,
+    ReverseCursorConverter,
     documents_dir,
     host_path,
     short_home,
@@ -175,16 +177,20 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
         saved_path = self._display_path(Path(raw_saved_path)) if raw_saved_path else ""
         if saved_path != raw_saved_path:
             self.settings.set_string(key, saved_path)
+
+        paths = [
+            path for path in paths if BaseCursorConverter.resolve_fallback_path(Path(path)).exists()
+        ]
+        if saved_path and not self._is_valid_fallback_path(Path(saved_path), key):
+            self.settings.set_string(key, "")
+            saved_path = ""
+
         values: list[str | None] = [None, *paths]
         labels = [_("None"), *(Path(p).name for p in paths)]
 
         if saved_path and saved_path not in paths:
             values.append(saved_path)
-            name = Path(saved_path).name
-            if BaseCursorConverter.resolve_fallback_path(Path(saved_path)).exists():
-                labels.append(name)
-            else:
-                labels.append(_("Unavailable: {path}").format(path=name))
+            labels.append(Path(saved_path).name)
 
         selected_index = values.index(saved_path) if saved_path in values else 0
 
@@ -199,6 +205,16 @@ class FlexaPreferencesDialog(Adw.PreferencesDialog):
 
         new_handler_id = row.connect("notify::selected", self._on_fallback_selected, key, values)
         setattr(row, "_fallback_handler_id", new_handler_id)
+
+    @staticmethod
+    def _is_valid_fallback_path(path: Path, key: str) -> bool:
+        try:
+            resolved = BaseCursorConverter.resolve_fallback_path(path)
+            if key == "fallback-theme-path-linux":
+                return CursorConverter.is_valid_fallback_path(resolved)
+            return ReverseCursorConverter.is_valid_fallback_path(resolved)
+        except OSError:
+            return False
 
     @staticmethod
     def _fallback_location(value: str | None) -> str | None:
@@ -405,6 +421,8 @@ class FallbackScan:
     _result: tuple[list[str], list[str]] | None = None
     _running = False
     _callbacks: list[Callable[[list[str], list[str]], None]] = []
+    _pending: dict[str, set[str]] = {"linux": set(), "windows": set()}
+    _overrides: dict[str, list[str] | None] = {"linux": None, "windows": None}
 
     @classmethod
     def start(cls, settings: Gio.Settings) -> None:
@@ -434,6 +452,23 @@ class FallbackScan:
             if cls._result is not None:
                 linux, windows = cls._result
                 cls._result = (paths, windows) if mode == "linux" else (linux, paths)
+            else:
+                cls._overrides[mode] = paths
+
+    @classmethod
+    def add_paths(cls, mode: str, paths: list[str]) -> None:
+        """Add themes produced by a conversion to the cached fallback list."""
+        if not paths:
+            return
+        with cls._lock:
+            if cls._result is None:
+                cls._pending[mode].update(paths)
+                return
+            linux, windows = cls._result
+            current = set(linux if mode == "linux" else windows)
+            current.update(paths)
+            updated = sorted(current)
+            cls._result = (updated, windows) if mode == "linux" else (linux, updated)
 
     @classmethod
     def _scan(cls, settings: Gio.Settings) -> None:
@@ -446,9 +481,15 @@ class FallbackScan:
     @classmethod
     def _finish(cls, result: tuple[list[str], list[str]]) -> bool:
         with cls._lock:
-            cls._result = result
+            linux = cls._overrides["linux"] or result[0]
+            windows = cls._overrides["windows"] or result[1]
+            linux = sorted(set(linux) | cls._pending["linux"])
+            windows = sorted(set(windows) | cls._pending["windows"])
+            cls._overrides = {"linux": None, "windows": None}
+            cls._pending = {"linux": set(), "windows": set()}
+            cls._result = (linux, windows)
             cls._running = False
             callbacks, cls._callbacks = cls._callbacks, []
         for callback in callbacks:
-            callback(*result)
+            callback(linux, windows)
         return False
