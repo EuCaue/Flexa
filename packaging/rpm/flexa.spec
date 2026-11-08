@@ -1,7 +1,7 @@
 %global appid io.github.eucaue.flexa
 %global debug_package %{nil}
 Name:           flexa
-Version:        1.2.8
+Version:        1.2.9
 Release:        1%{?dist}
 Summary:        Convert Windows cursor themes to Linux format
 License:        GPL-3.0-or-later
@@ -57,6 +57,11 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{appid}.desktop
 %{_datadir}/icons/hicolor/symbolic/apps/%{appid}-symbolic.svg
 
 %changelog
+* Sun Nov 08 2026 caue <caue@fedora> - 1.2.9-1
+- Refresh the fallback theme list after conversions
+- Keep Preferences responsive with large theme lists
+- Remove deleted or invalid fallback themes
+- Show host cursor themes inside Flatpak fallback lists
 * Mon Nov 02 2026 caue <caue@fedora> - 1.2.8-1
 - Keep spinners animating after switching tabs
 - Report failures when opening the output folder

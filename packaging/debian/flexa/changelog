@@ -1,3 +1,12 @@
+flexa (1.2.9-1) unstable; urgency=medium
+
+  * Refresh the fallback theme list after conversions
+  * Keep Preferences responsive with large theme lists
+  * Remove deleted or invalid fallback themes
+  * Show host cursor themes inside Flatpak fallback lists
+
+ -- caue <caue@fedora>  Sun, 08 Nov 2026 22:51:20 +0000
+
 flexa (1.2.8-1) unstable; urgency=medium
 
   * Keep spinners animating after switching tabs
